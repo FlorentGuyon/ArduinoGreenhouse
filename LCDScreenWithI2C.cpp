@@ -40,3 +40,10 @@ void LCDScreenWithI2C::write_text(const char* text) {
   LiquidCrystal_I2C::print(text);
   LiquidCrystal_I2C::backlight();
 }
+
+void LCDScreenWithI2C::write_text(const String text) {
+  LiquidCrystal_I2C::clear();
+  LiquidCrystal_I2C::setCursor(0, 0);
+  LiquidCrystal_I2C::print(text);
+  LiquidCrystal_I2C::backlight();
+}

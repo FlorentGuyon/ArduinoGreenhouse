@@ -354,19 +354,20 @@ void LCDScreenRun() {
       // If the prints are not done
       if (lcd_screen_text_index <= lcd_screen_count_texts -1) {
         //
-        char text[64];
+        String text;
+        uint8_t text_index = 0;
         //
-        if (lcd_screen_text_index == 0) {sprintf(text, "%s", real_time_clock.get_timedate());}
-        if (lcd_screen_text_index == 1) {sprintf(text, "Temperature %huC", temperature_sensor.get_temperature());}
-        if (lcd_screen_text_index == 2) {sprintf(text, "Air humidity %hu%%", temperature_sensor.get_humidity());}
-        //if (lcd_screen_text_index == 2) {sprintf(text, "Soil humidity %hu%%", humidity_sensor.get_humidity());}
-        //if (lcd_screen_text_index == 2) {sprintf(text, "Illuminance %hu%%", light_sensor.get_humidity());}
-        if (lcd_screen_text_index == 3) {sprintf(text, "Current %humA", current_sensor.get_milliampere());} 
-        if (lcd_screen_text_index == 4) {sprintf(text, "CO2 %huppm", gas_sensor.get_gas_concentration());} 
-        if (lcd_screen_text_index == 5) {sprintf(text, "Humidifier %s", humidifier.get_switch_value() ? "ON" : "OFF");} 
-        if (lcd_screen_text_index == 6) {sprintf(text, "LED strip %s", led_strip.get_switch_value() ? "ON" : "OFF");}
-        if (lcd_screen_text_index == 7) {sprintf(text, "Water pump %s", water_pump.get_switch_value() ? "ON" : "OFF");}
-        if (lcd_screen_text_index == 8) {sprintf(text, "Fans %s", fans.get_switch_value() ? "ON" : "OFF");}
+        if (lcd_screen_text_index == text_index++) {text = real_time_clock.get_timedate();}
+        if (lcd_screen_text_index == text_index++) {text = "Air humidity " + String(temperature_sensor.get_humidity()) + "%";}
+        if (lcd_screen_text_index == text_index++) {text = "Humidifier " + String(humidifier.get_switch_value() ? "ON" : "OFF");} 
+        if (lcd_screen_text_index == text_index++) {text = "Temperature " +  String(temperature_sensor.get_temperature()) + "C";}
+        if (lcd_screen_text_index == text_index++) {text = "CO2 " + String(gas_sensor.get_gas_concentration()) + "ppm";} 
+        if (lcd_screen_text_index == text_index++) {text = "Fans " + String(fans.get_switch_value() ? "ON" : "OFF");}
+        //if (lcd_screen_text_index == text_index++) {text = "Soil humidity " + String(soil_humidity_sensor.get_humidity()) + "%";}
+        if (lcd_screen_text_index == text_index++) {text = "Water pump " + String(water_pump.get_switch_value() ? "ON" : "OFF");}
+        //if (lcd_screen_text_index == text_index++) {text = "Illuminance " + String(light_sensor.get_illuminance()) + "lux";}
+        if (lcd_screen_text_index == text_index++) {text = "LED strip " + String(led_strip.get_switch_value() ? "ON" : "OFF");}
+        if (lcd_screen_text_index == text_index++) {text = "Current " + String(current_sensor.get_milliampere()) + "mA";} 
         //
         lcd_screen.write_text(text);
         //
