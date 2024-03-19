@@ -347,12 +347,18 @@ void PushButtonRun() {
   }
 }
 
-void ArduinoResetRun() {
+void ArduinoResetRun() {  
+  // If the last button pushing was long enough, reset the Arduino
   if (push_button.get_last_push_duration() >= arduino_reset_push_duration) {
+    // Write it in the console
     Serial.print(F("Arduino reset..."));
-    wdt_disable();  // Disable the watchdog timer to prevent automatic reset
-    delay(1000);    // Delay to allow Serial to finish transmitting
-    wdt_enable(WDTO_15MS);  // Enable the watchdog timer with a short timeout
+    // Disable the watchdog timer to prevent automatic reset
+    wdt_disable();
+    // Delay to allow Serial to finish transmitting
+    delay(1000);
+    // Enable the watchdog timer with a short timeout
+    wdt_enable(WDTO_15MS);
+    // Wait undefinitly until the reset
     while(1);
   }
 }
