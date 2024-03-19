@@ -58,8 +58,8 @@ typedef void (*CallbackFunction)();
 // Callback functions to call at a regular interval 
 struct Task {
     CallbackFunction callback_function;
-    uint16_t frequency;
-    uint32_t* last_run;
+    uint32_t frequency; // ~7 weeks maximum
+    uint32_t* last_run; // ~7 weeks maximum
 };
 
 // ############################################################################ CONSTANTS
