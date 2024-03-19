@@ -51,7 +51,7 @@
 // ############################################################################ TYPES
 
 // Pointer to a function
-typedef void (*CallbackFunction)();
+typedef bool (*CallbackFunction)();
 
 // ############################################################################ STRUCTURES
 
@@ -69,19 +69,18 @@ struct Task {
 
 // MAIN
 #define main_loop_frequency 500 // ms
-#define count_tasks 15
+#define count_tasks 8
 
 // ARDUINO RESET
 #define arduino_reset_push_duration 5 * 1000UL // ms
-#define arduino_reset_frequency 0.5 * 1000UL // ms
 
 // TEMPERATURE SENSOR
 #define temperature_sensor_pin 6
-#define temperature_sensor_frequency 60 * 1000UL // ms
+#define temperature_sensor_frequency 10 * 60 * 1000UL // ms
 
 // CURRENT SENSOR
 #define current_sensor_pin A1
-#define current_sensor_frequency 20 * 1000UL // ms
+#define current_sensor_frequency 60 * 1000UL // ms
 
 // LCD SCREEN
 #define lcd_screen_I2C_address 0x27
@@ -93,17 +92,15 @@ struct Task {
 
 // GAS SENSOR
 #define gas_sensor_pin A3
-#define gas_sensor_frequency 10 * 1000UL // ms
+#define gas_sensor_frequency 10 * 60 * 1000UL // ms
 
 // HUMIDIFIER
 #define humidifier_humidity_minimal_threshold 50 // %
 #define humidifier_count_thresholds 1
-#define humidifier_frequency 60 * 1000UL // ms
 
 // LED STRIP
 #define led_strip_illuminance_minimal_threshold 1200 // lux
 #define led_strip_count_thresholds 1
-#define led_strip_frequency 60 * 1000UL // ms
 
 // REGISTERS
 #define registers_SER_pin 2
@@ -111,13 +108,12 @@ struct Task {
 #define registers_SCK_pin 4
 #define count_registers 1
 #define bit_per_register 8
-#define registers_frequency 60 * 1000UL // ms
 
 // SD CARD
 #define sd_card_CS_pin 10
 #define sd_card_data_file "data.csv"
 #define sd_card_count_texts 16
-#define sd_card_frequency 5 * 60 * 1000UL // ms
+#define sd_card_frequency 10 * 60 * 1000UL // ms
 
 // PUSH BUTTON
 #define push_button_pin 7
@@ -128,45 +124,33 @@ struct Task {
 
 // REAL TIME CLOCK
 #define real_time_clock_I2C_address 0x68
-#define real_time_clock_frequency 60 * 1000UL // ms
 
 // WATER PUMP
 #define water_pump_soil_humidity_minimal_threshold 50 // %
 #define water_pump_count_thresholds 1
-#define water_pump_frequency 60 * 1000UL // ms
 
 // FANS
 #define fans_temperature_maximal_threshold 20 // °C
 #define fans_humidity_maximal_threshold 90 // %
 #define fans_co2_level_maximal_threshold 400 // %
 #define fans_count_thresholds 3
-#define fans_frequency 60 * 1000UL // ms
 
 // LIGHT SENSOR
-#define light_sensor_frequency 60 * 1000UL // ms
+#define light_sensor_frequency 10 * 60 * 1000UL // ms
 
 // SOIL HUMIDITY SENSOR
-#define soil_humidity_sensor_frequency 60 * 1000UL // ms
+#define soil_humidity_sensor_frequency 10 * 60 * 1000UL // ms
 
 // ############################################################################ GLOBAL VARIABLES
 
-// ARDUINO RESET
-uint32_t arduino_reset_last_run = 0;
-
 // TEMPERATURE SENSOR
 uint32_t temperature_sensor_last_run = 0;
-
-// HUMIDIFIER
-uint32_t humidifier_last_run = 0;
 
 // CURRENT SENSOR
 uint32_t current_sensor_last_run = 0;
 
 // GAS SENSOR
 uint32_t gas_sensor_last_run = 0;
-
-// LED STRIP
-uint32_t led_strip_last_run = 0;
 
 // CAMERA
 uint32_t camera_last_run = 0;
@@ -179,20 +163,8 @@ uint32_t lcd_screen_last_print = 0; // ms
 uint8_t lcd_screen_text_index = 0;
 uint32_t lcd_screen_last_run = 0;
 
-// REGISTERS
-uint32_t registers_last_run = 0;
-
 // PUSH BUTTON
 uint32_t push_button_last_run = 0;
-
-// REAL TIME CLOCK
-uint32_t real_time_clock_last_run = 0;
-
-// WATER PUMP
-uint32_t water_pump_last_run = 0;
-
-// FANS
-uint32_t fans_last_run = 0;
 
 // LIGHT SENSOR
 uint32_t light_sensor_last_run = 0;
@@ -271,23 +243,26 @@ bool* switches[count_registers * bit_per_register] = {
 
 // ############################################################################ CALLBACK FUNCTIONS
 
-// The real time clock tells the time even after being powerd off
-void RealTimeClockRun() {
-  Serial.print(F("Real time clock: "));
-  Serial.println(real_time_clock.get_timedate());
-}
-
 // The temperature sensor reads the temperature and humidity of the air
-void TemperatureSensorRun() {
-  // Read the temperature and humidity of the air
+bool TemperatureSensorRun() {
+  // Try to read the temperature and humidity of the air
   if (temperature_sensor.read_humidity_and_temperature()) {
+    // Write the data in the console
     Serial.print(F("Temperature: "));
     Serial.print(temperature_sensor.get_temperature());
     Serial.println(F("°C"));
     Serial.print(F("Humidity: "));
     Serial.print(temperature_sensor.get_humidity());
     Serial.println(F("%"));
-  }
+    // Call the humidifier callback function to check its thresholds
+    HumidifierRun();
+    // Call the fans callback function to check its thresholds
+    FansRun();
+    //
+    return true;
+  } 
+  //
+  return false;
 }
 
 // The humidifier increase the amount of moisture in the air
@@ -296,20 +271,28 @@ void HumidifierRun() {
   humidifier.check_thresholds();    
   Serial.print(F("Humidifier: "));
   Serial.println(humidifier.get_switch_value() ? F("ON") : F("OFF"));
+  // Call the registers callback function to check the switches
+  RegistersRun();
 }
 
 // The gas sensor reads the level of CO2
-void GasSensorRun() {
+bool GasSensorRun() {
   // Try to read the CO2 level
   if (gas_sensor.read_data()) {
     Serial.print(F("CO2 level: "));
     Serial.print(gas_sensor.get_gas_concentration());  
     Serial.println(F("ppm"));
+    // Call the fans callback function to check its thresholds
+    FansRun();
+    //
+    return true;
   }
   // If it fails
   else {
     // Write it in the console
     Serial.println(F("Unable to read data from the gas sensor."));
+    //
+    return false;
   }
 }
 
@@ -319,11 +302,16 @@ void FansRun() {
   fans.check_thresholds();    
   Serial.print(F("Fans: "));
   Serial.println(fans.get_switch_value() ? F("ON") : F("OFF"));
+  // Call the registers callback function to check the switches
+  RegistersRun();
 }
 
 // The light sensor reads the illuminance
-void LightSensorRun() {
+bool LightSensorRun() {
+  // Call the LED strip callback function to check its thresholds
+  LEDStripRun();
   //
+  return true;
 }
 
 // The LED strip increases the illuminance
@@ -332,11 +320,16 @@ void LEDStripRun() {
   led_strip.set_switch_value(false);    
   Serial.print(F("LED Strip: "));
   Serial.println(led_strip.get_switch_value() ? F("ON") : F("OFF"));
+  // Call the registers callback function to check the switches
+  RegistersRun();
 }
 
 // The soil humidity sensor reads the amount of water in the soil
-void SoilHumiditySensorRun() {
+bool SoilHumiditySensorRun() {
+  // Call the water pump callback function to check its thresholds
+  WaterPumpRun();
   //
+  return true;
 }
 
 // The water pump irrigates the soils
@@ -345,20 +338,26 @@ void WaterPumpRun() {
   water_pump.set_switch_value(false);    
   Serial.print(F("Water pump: "));
   Serial.println(led_strip.get_switch_value() ? F("ON") : F("OFF"));
+  // Call the registers callback function to check the switches
+  RegistersRun();
 }
 
 // The current sensor read the current drawn by the devices
-void CurrentSensorRun() {
-  // Read the current drawn
+bool CurrentSensorRun() {
+  // Try to read the current drawn
   if (current_sensor.read_current()) {
     Serial.print(F("Current: "));
     Serial.print(current_sensor.get_milliampere());
     Serial.println(F("mA"));
+    //
+    return true;
   }
+  //
+  return false;
 }
 
 // The push button turn on the LCD screen or reboot the board
-void PushButtonRun() {
+bool PushButtonRun() {
   // Record the timestamp and duration of the push (if any), with a timeout 
   if (push_button.read_push(arduino_reset_push_duration)) {
     Serial.print(F("Last push timestamp: "));
@@ -367,7 +366,11 @@ void PushButtonRun() {
     Serial.println(push_button.get_last_push_duration());
     Serial.print(F("Count pushes: "));
     Serial.println(push_button.get_count_pushes());
+    // Call the arduino reset callback function to check the last push
+    ArduinoResetRun();
   }
+  //
+  return true;
 }
 
 // The arduino reset does a soft reboot of the board with a long press on the push button
@@ -484,9 +487,11 @@ void SDCardRun() {
       Serial.print(sd_card_data_file);
       Serial.println(F("\"."));
       // Quit the function
-      return;
+      return false;
     }
   }
+  //
+  return true;
 }
 
 // ############################################################################ TASKS
@@ -502,21 +507,14 @@ void SDCardRun() {
 //  ]
 //
 Task tasks[count_tasks] = {
-  {RealTimeClockRun, real_time_clock_frequency, &real_time_clock_last_run},
   {TemperatureSensorRun, temperature_sensor_frequency, &temperature_sensor_last_run},
-  {HumidifierRun, humidifier_frequency, &humidifier_last_run},
   {GasSensorRun, gas_sensor_frequency, &gas_sensor_last_run},
-  {FansRun, fans_frequency, &fans_last_run},
   {LightSensorRun, light_sensor_frequency, &light_sensor_last_run},
-  {LEDStripRun, led_strip_frequency, &led_strip_last_run},
   {SoilHumiditySensorRun, soil_humidity_sensor_frequency, &soil_humidity_sensor_last_run},
-  {WaterPumpRun, water_pump_frequency, &water_pump_last_run},
   {CurrentSensorRun, current_sensor_frequency, &current_sensor_last_run},
   {PushButtonRun, push_button_frequency, &push_button_last_run},
-  {LCDScreenRun, lcd_screen_frequency, &lcd_screen_last_run},
-  {RegistersRun, registers_frequency, &registers_last_run},
-  {SDCardRun, sd_card_frequency, &sd_card_last_run},
-  {ArduinoResetRun, arduino_reset_frequency, &arduino_reset_last_run}
+  {LCDScreenRun, lcd_screen_frequency, &lcd_screen_last_run}, 
+  {SDCardRun, sd_card_frequency, &sd_card_last_run}
 };
 
 // ############################################################################ INITIALISATION
@@ -605,10 +603,11 @@ void loop() {
   for (uint8_t task_index = 0 ; task_index <= count_tasks -1 ; ++task_index) {
     // If the task has never been executed, or not for a long enough time
     if ((*tasks[task_index].last_run == 0) || ((millis() - *tasks[task_index].last_run) >= tasks[task_index].frequency)) {
-      // Execute the callback function
-      tasks[task_index].callback_function();
-      // Reset the timer
-      *tasks[task_index].last_run = millis();
+      // Try to execute the callback function
+      if (tasks[task_index].callback_function()) {
+        // If it succeed, reset the timer
+        *tasks[task_index].last_run = millis();
+      }
     }
   }
   // Wait before evaluating all the tasks again
