@@ -116,6 +116,7 @@ struct Task {
 // SD CARD
 #define sd_card_CS_pin 10
 #define sd_card_data_file "data.csv"
+#define sd_card_count_texts 16
 #define sd_card_frequency 5 * 60 * 1000UL // ms
 
 // PUSH BUTTON
@@ -407,56 +408,46 @@ void RegistersRun() {
 }
 
 void SDCardRun() {
-  //
-  String new_line = real_time_clock.get_timedate() + "," +  // Timedate (yy-m-d h-m-s)
-    String(temperature_sensor.get_temperature()) + "," +    // Temperature (°C)
-    String(fans_temperature_maximal_threshold) + "," +      // Target temperature (°C)
-    String(gas_sensor.get_gas_concentration()) + "," +      // CO2 level (ppm)
-    String(fans_co2_level_maximal_threshold) + "," +        // Target CO2 level (ppm)
-    String(fans.get_switch_value() * 100) + ",";            // Fans usage (%)
-
-  if (sd_card.write(sd_card_data_file, new_line)) {
-    Serial.print(F("SD Card: "));
-    Serial.print(new_line);
-  } else {
-    Serial.print(F("Unable to write \""));
-    Serial.print(new_line);
-    Serial.print(F("\" in the file \""));
-    Serial.print(sd_card_data_file);
-    Serial.println(F("\"."));
-  }
-
-  new_line = String(temperature_sensor.get_humidity()) + "," +  // Air humidity (%)
-    String(humidifier_humidity_minimal_threshold) + "," +       // Target air humidity (%)
-    String(humidifier.get_switch_value() * 100) + "," +         // Humidifier usage (%)
-    String(/*soil_humidity_sensor.get_humidity()*/) + "," +     // Soil humidity (%)
-    String(water_pump_soil_humidity_minimal_threshold) + "," +  // Target soil humidity (%)
-    String(/*water_pump.get_switch_value() * 100*/) + ",";      // Water pump usage (%)
-
-  if (sd_card.write(sd_card_data_file, new_line)) {
-    Serial.print(new_line);
-  } else {
-    Serial.print(F("Unable to write \""));
-    Serial.print(new_line);
-    Serial.print(F("\" in the file \""));
-    Serial.print(sd_card_data_file);
-    Serial.println(F("\"."));
-  }
-
-  new_line = String(/*light_sensor.get_illuminance()*/) + "," +  // Illuminance (lux)
-    String(/*led_strip_illuminance_minimal_threshold*/) + "," +   // Target illuminance (lux)
-    String(/*led_strip.get_switch_value() * 100*/) + "," +        // LED strip usage (%)
-    String(current_sensor.get_milliampere()) + "\n";              // Current consumption (mA)
-      
-  //
-  if (sd_card.write(sd_card_data_file, new_line)) {
-    Serial.print(new_line);
-  } else {
-    Serial.print(F("Unable to write \""));
-    Serial.print(new_line);
-    Serial.print(F("\" in the file \""));
-    Serial.print(sd_card_data_file);
-    Serial.println(F("\"."));
+  // Write in the console the texts written in the SD card
+  Serial.print(F("SD Card: "));
+  // Text written in the SD card
+  String new_text;
+  // Go through all the texts to write
+  for (uint8_t current_index = 0; current_index <= sd_card_count_texts -1 ; ++current_index) {
+    // Auto incremented variable for easier modifications
+    uint8_t text_index = 0;
+    // Choose the text to write in the SD card depending on the current index
+    if (current_index == text_index++) {new_text = real_time_clock.get_timedate() + F(",");}                       // Timedate (yy-m-d h-m-s)
+    if (current_index == text_index++) {new_text = String(temperature_sensor.get_temperature()) + F(",");}         // Temperature (°C)
+    if (current_index == text_index++) {new_text = String(fans_temperature_maximal_threshold) + F(",");}           // Target temperature (°C)
+    if (current_index == text_index++) {new_text = String(gas_sensor.get_gas_concentration()) + F(",");}           // CO2 level (ppm)
+    if (current_index == text_index++) {new_text = String(fans_co2_level_maximal_threshold) + F(",");}             // Target CO2 level (ppm)
+    if (current_index == text_index++) {new_text = String(fans.get_switch_value() * 100) + F(",");}                // Fans usage (%)
+    if (current_index == text_index++) {new_text = String(temperature_sensor.get_humidity()) + F(",");}            // Air humidity (%)
+    if (current_index == text_index++) {new_text = String(humidifier_humidity_minimal_threshold) + F(",");}        // Target air humidity (%)
+    if (current_index == text_index++) {new_text = String(humidifier.get_switch_value() * 100) + F(",");}          // Humidifier usage (%)
+    if (current_index == text_index++) {new_text = String(/*soil_humidity_sensor.get_humidity()*/) + F(",");}      // Soil humidity (%)
+    if (current_index == text_index++) {new_text = String(water_pump_soil_humidity_minimal_threshold) + F(",");}   // Target soil humidity (%)
+    if (current_index == text_index++) {new_text = String(water_pump.get_switch_value() * 100) + F(",");}          // Water pump usage (%)
+    if (current_index == text_index++) {new_text = String(/*light_sensor.get_illuminance()*/) + F(",");}           // Illuminance (lux)
+    if (current_index == text_index++) {new_text = String(led_strip_illuminance_minimal_threshold) + F(",");}      // Target illuminance (lux)
+    if (current_index == text_index++) {new_text = String(led_strip.get_switch_value() * 100) + F(",");}           // LED strip usage (%)
+    if (current_index == text_index++) {new_text = String(current_sensor.get_milliampere()) + F("\n");}            // Current consumption (mA)
+    // Try to write the text in the SD card
+    if (sd_card.write(sd_card_data_file, new_text)) {
+      Serial.print(new_text);
+    } 
+    // If it fails
+    else {
+      // Print a log in the console
+      Serial.print(F("Unable to write \""));
+      Serial.print(new_text);
+      Serial.print(F("\" in the file \""));
+      Serial.print(sd_card_data_file);
+      Serial.println(F("\"."));
+      // Quit the function
+      return;
+    }
   }
 }
 
