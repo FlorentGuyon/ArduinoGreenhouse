@@ -50,8 +50,15 @@
 
 // ############################################################################ CONSTANTS
 
-// SERIAL COMMUNICATIONS
+// SERIAL COMMUNICATION
 #define serial_communication_frequency 9600  // baud
+
+// MAIN
+#define main_loop_frequency 500 // ms
+
+// ARDUINO RESET
+#define arduino_reset_push_duration 5 * 1000UL // ms
+#define arduino_reset_frequency 0.5 * 1000UL // ms
 
 // TEMPERATURE SENSOR
 #define temperature_sensor_pin 6
@@ -127,6 +134,9 @@
 
 // ############################################################################ GLOBAL VARIABLES
 
+// ARDUINO RESET
+uint32_t arduino_reset_last_run = 0;
+
 // TEMPERATURE SENSOR
 uint32_t temperature_sensor_last_run = 0;
 
@@ -192,7 +202,7 @@ Regulator fans;
 //SoilHumiditySensor soil_humidity_sensor; // V
 //LightSensor light_sensor; // V
 
-// ############################################################################ LIMITS BEFORE ACTIVATION
+// ############################################################################ DEVICES THRESHOLDS
 
 // HUMIDIFIER
 MinimalThreshold humidifier_humidity_threshold(&temperature_sensor._humidity, humidifier_humidity_minimal_threshold);
@@ -318,6 +328,16 @@ void PushButtonRun() {
     Serial.println(push_button.get_last_push_duration());
     Serial.print(F("Count pushes: "));
     Serial.println(push_button.get_count_pushes());
+  }
+}
+
+void ArduinoResetRun() {
+  if (push_button.get_last_push_duration() >= arduino_reset_push_duration) {
+    Serial.print(F("Arduino reset..."));
+    wdt_disable();  // Disable the watchdog timer to prevent automatic reset
+    delay(1000);    // Delay to allow Serial to finish transmitting
+    wdt_enable(WDTO_15MS);  // Enable the watchdog timer with a short timeout
+    while(1);
   }
 }
 
@@ -570,5 +590,10 @@ void loop() {
     sd_card_last_run = millis();
   }
   //
-  delay(500); // ms
+  if ((arduino_reset_last_run == 0) || ((millis() - arduino_reset_last_run) >= arduino_reset_frequency)) {
+    ArduinoResetRun();
+    arduino_reset_last_run = millis();
+  }
+  //
+  delay(main_loop_frequency); // ms
 }
