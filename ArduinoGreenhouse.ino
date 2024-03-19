@@ -32,12 +32,13 @@
   
 // ############################################################################ LIBRARIES USEFULL TO RUN THE GREENHOUSE
 
+#include <avr/wdt.h>            // Arduino reset
 #include <stdint.h>             // Definition of the uint<x>_t types
 #include "TemperatureSensor.h"  // Read the humidity and temperature of the air into the greenhouse
 #include "CurrentSensor.h"      // Read the voltage and the ampere of current from the batteries - if there is no external power supply plugged in -
 #include "LCDScreenWithI2C.h"   // Print text on a LCD screen
 #include "GasSensor.h"          // Read the concentration of gas (NH3, NOx, alcohol, Benzene, smoke, CO2, ...) in the air 
-#include "Buzzer.h"             // Generate a high pitch sound
+#include "Pulsable.h"           // Allow to send pulses to a pin
 #include "Register.h"           // Multiply the number of available pins
 #include "SDCard.h"             // Write data in files
 #include "LightSensor.h"        // Read the illuminance
@@ -180,7 +181,7 @@ TemperatureSensor temperature_sensor(temperature_sensor_pin); // 3V
 CurrentSensor current_sensor(current_sensor_pin); // 5V
 LCDScreenWithI2C lcd_screen(lcd_screen_I2C_address, lcd_screen_count_columns, lcd_screen_count_lines); // 5V
 GasSensor gas_sensor(gas_sensor_pin); // 5V
-Buzzer buzzer(buzzer_pin); // 3V
+Pulsable buzzer(buzzer_pin); // 3V
 SDCard sd_card(sd_card_CS_pin); // 5V
 PushButton push_button(push_button_pin);
 RealTimeClock real_time_clock; // 5V
@@ -428,7 +429,7 @@ void SDCardRun() {
 void setup() {
   
   // BEGINING
-  buzzer.buzz();
+  buzzer.pulse();
 
   // SERIAL COMMUNICATIONS
   Serial.begin(serial_communication_frequency);
@@ -493,7 +494,7 @@ void setup() {
   Serial.println(F("Done."));
 
   // END
-  buzzer.buzz(50, 2);
+  buzzer.pulse(50, 2, 50);
 }
 
 // ############################################################################ MAIN PROGRAM
