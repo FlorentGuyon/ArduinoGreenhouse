@@ -452,7 +452,17 @@ void SDCardRun() {
 }
 
 // ############################################################################ TASKS
-
+//
+// List of the callback functions to call within a regular interval of time
+//
+//  Task = [
+//   {
+//      Pointer to the callback function,
+//      Frequency of the callback (ms),
+//      Last call of the function (ms)
+//    } 
+//  ]
+//
 Task tasks[count_tasks] = {
   {RealTimeClockRun, real_time_clock_frequency, &real_time_clock_last_run},
   {TemperatureSensorRun, temperature_sensor_frequency, &temperature_sensor_last_run},
