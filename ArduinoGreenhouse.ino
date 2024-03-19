@@ -48,6 +48,20 @@
 //#include "LightSensor.h"        // Read the illuminance
 //#include "SoilHumiditySensor.h" // Read the amount of water in the soil
 
+// ############################################################################ TYPES
+
+// Pointer to a function
+typedef void (*CallbackFunction)();
+
+// ############################################################################ STRUCTURES
+
+// Callback functions to call at a regular interval 
+struct Task {
+    CallbackFunction callback_function;
+    uint16_t frequency;
+    uint32_t* last_run;
+};
+
 // ############################################################################ CONSTANTS
 
 // SERIAL COMMUNICATION
@@ -55,6 +69,7 @@
 
 // MAIN
 #define main_loop_frequency 500 // ms
+#define count_tasks 15
 
 // ARDUINO RESET
 #define arduino_reset_push_duration 5 * 1000UL // ms
@@ -445,6 +460,26 @@ void SDCardRun() {
   }
 }
 
+// ############################################################################ TASKS
+
+Task tasks[count_tasks] = {
+  {RealTimeClockRun, real_time_clock_frequency, &real_time_clock_last_run},
+  {TemperatureSensorRun, temperature_sensor_frequency, &temperature_sensor_last_run},
+  {HumidifierRun, humidifier_frequency, &humidifier_last_run},
+  {GasSensorRun, gas_sensor_frequency, &gas_sensor_last_run},
+  {FansRun, fans_frequency, &fans_last_run},
+  {LightSensorRun, light_sensor_frequency, &light_sensor_last_run},
+  {LEDStripRun, led_strip_frequency, &led_strip_last_run},
+  {SoilHumiditySensorRun, soil_humidity_sensor_frequency, &soil_humidity_sensor_last_run},
+  {WaterPumpRun, water_pump_frequency, &water_pump_last_run},
+  {CurrentSensorRun, current_sensor_frequency, &current_sensor_last_run},
+  {PushButtonRun, push_button_frequency, &push_button_last_run},
+  {LCDScreenRun, lcd_screen_frequency, &lcd_screen_last_run},
+  {RegistersRun, registers_frequency, &registers_last_run},
+  {SDCardRun, sd_card_frequency, &sd_card_last_run},
+  {ArduinoResetRun, arduino_reset_frequency, &arduino_reset_last_run}
+};
+
 // ############################################################################ INITIALISATION
 
 void setup() {
@@ -521,80 +556,16 @@ void setup() {
 // ############################################################################ MAIN PROGRAM
 
 void loop() {
-  //
-  if ((real_time_clock_last_run == 0) || ((millis() - real_time_clock_last_run) >= real_time_clock_frequency)) {
-    RealTimeClockRun();
-    real_time_clock_last_run = millis();
+  // For each task in the list
+  for (uint8_t task_index = 0 ; task_index <= count_tasks -1 ; ++task_index) {
+    // If the task has never been executed, or not for a long enough time
+    if ((*tasks[task_index].last_run == 0) || ((millis() - *tasks[task_index].last_run) >= tasks[task_index].frequency)) {
+      // Execute the callback function
+      tasks[task_index].callback_function();
+      // Reset the timer
+      *tasks[task_index].last_run = millis();
+    }
   }
-  if ((temperature_sensor_last_run == 0) || ((millis() - temperature_sensor_last_run) >= temperature_sensor_frequency)) {
-    TemperatureSensorRun();
-    temperature_sensor_last_run = millis();
-  }
-  //
-  if ((humidifier_last_run == 0) || ((millis() - humidifier_last_run) >= humidifier_frequency)) {
-    HumidifierRun();
-    humidifier_last_run = millis();
-  }
-  //
-  if ((gas_sensor_last_run == 0) || ((millis() - gas_sensor_last_run) >= gas_sensor_frequency)) {
-    GasSensorRun();
-    gas_sensor_last_run = millis();
-  }
-  //
-  if ((fans_last_run == 0) || ((millis() - fans_last_run) >= fans_frequency)) {
-    FansRun();
-    fans_last_run = millis();
-  }
-  //
-  if ((light_sensor_last_run == 0) || ((millis() - light_sensor_last_run) >= light_sensor_frequency)) {
-    LightSensorRun();
-    light_sensor_last_run = millis();
-  }
-  //
-  if ((led_strip_last_run == 0) || ((millis() - led_strip_last_run) >= led_strip_frequency)) {
-    LEDStripRun();
-    led_strip_last_run = millis();
-  }
-  //
-  if ((soil_humidity_sensor_last_run == 0) || ((millis() - soil_humidity_sensor_last_run) >= soil_humidity_sensor_frequency)) {
-    SoilHumiditySensorRun();
-    soil_humidity_sensor_last_run = millis();
-  }
-  //
-  if ((water_pump_last_run == 0) || ((millis() - water_pump_last_run) >= water_pump_frequency)) {
-    WaterPumpRun();
-    water_pump_last_run = millis();
-  }
-  //
-  if ((current_sensor_last_run == 0) || ((millis() - current_sensor_last_run) >= current_sensor_frequency)) {
-    CurrentSensorRun();
-    current_sensor_last_run = millis();
-  }
-  //
-  if ((push_button_last_run == 0) || ((millis() - push_button_last_run) >= push_button_frequency)) {
-    PushButtonRun();
-    push_button_last_run = millis();
-  }
-  //
-  if ((lcd_screen_last_run == 0) || ((millis() - lcd_screen_last_run) >= lcd_screen_frequency)) {
-    LCDScreenRun();
-    lcd_screen_last_run = millis();
-  }
-  //
-  if ((registers_last_run == 0) || ((millis() - registers_last_run) >= registers_frequency)) {
-    RegistersRun();
-    registers_last_run = millis();
-  }
-  //
-  if ((sd_card_last_run == 0) || ((millis() - sd_card_last_run) >= sd_card_frequency)) {
-    SDCardRun();
-    sd_card_last_run = millis();
-  }
-  //
-  if ((arduino_reset_last_run == 0) || ((millis() - arduino_reset_last_run) >= arduino_reset_frequency)) {
-    ArduinoResetRun();
-    arduino_reset_last_run = millis();
-  }
-  //
+  // Wait before evaluating all the tasks again
   delay(main_loop_frequency); // ms
 }
