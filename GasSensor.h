@@ -45,26 +45,26 @@ public:
   uint8_t _sensor_pin; // Analog input
 
   // DATA
-  uint8_t _humidity; // 30.00%
-  uint8_t _temperature; // 20.00°C
+  uint8_t* _humidity_address; // 30.00%
+  uint8_t* _temperature_address; // 20.00°C
   uint16_t _gas_concentration; // 600ppm
 
   // ########################################################################## CONSTRUCTORS
 
-  GasSensor(uint8_t sensor_pin);
+  GasSensor(uint8_t sensor_pin, uint8_t* humidity_address = nullptr, uint8_t* temperature_address = nullptr);
 
   // ########################################################################## SETTERS
 
   void set_sensor_pin(uint8_t sensor_pin);
-  bool set_humidity(uint8_t humidity);
-  bool set_temperature(uint8_t temperature);
+  bool set_humidity_address(uint8_t* humidity_address);
+  bool set_temperature_address(uint8_t* temperature_address);
   bool set_gas_concentration(uint16_t gas_concentration);
 
   // ########################################################################## GETTERS
 
   uint8_t get_sensor_pin(void);
-  uint8_t get_humidity(void);
-  uint8_t get_temperature(void);
+  uint8_t* get_humidity_address(void);
+  uint8_t* get_temperature_address(void);
   uint16_t get_gas_concentration(void);
 
   // ########################################################################## OTHER

@@ -300,10 +300,6 @@ void HumidifierRun() {
 
 // The gas sensor reads the level of CO2
 void GasSensorRun() {
-  // Update the temperature and humidity to correct the CO2 level value
-  gas_sensor.set_temperature(temperature_sensor.get_temperature());
-  gas_sensor.set_humidity(temperature_sensor.get_humidity());
-
   // Try to read the CO2 level
   if (gas_sensor.read_data()) {
     Serial.print(F("CO2 level: "));
@@ -538,6 +534,12 @@ void setup() {
   // TEMPERATURE SENSOR
   Serial.print(F("Initializing temperature sensor... "));
   temperature_sensor.initialize();
+  Serial.println(F("Done."));
+
+  // GAS SENSOR
+  Serial.print(F("Initializing gas sensor... "));
+  gas_sensor.set_temperature_address(&temperature_sensor._temperature);
+  gas_sensor.set_humidity_address(&temperature_sensor._humidity);
   Serial.println(F("Done."));
 
   // HUMIDIFIER
