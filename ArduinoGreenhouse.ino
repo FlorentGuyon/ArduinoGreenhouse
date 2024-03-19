@@ -337,7 +337,7 @@ void CurrentSensorRun() {
 }
 
 void PushButtonRun() {
-  if (push_button.read_push()) {
+  if (push_button.read_push(arduino_reset_push_duration)) {
     Serial.print(F("Last push timestamp: "));
     Serial.println(push_button.get_last_push_timestamp());
     Serial.print(F("Last push duration: "));

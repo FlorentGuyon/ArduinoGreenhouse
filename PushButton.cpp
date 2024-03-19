@@ -57,13 +57,17 @@ uint8_t PushButton::get_count_pushes(void) {
 
 // ########################################################################## OTHERS
 
-bool PushButton::read_push(void) {
+bool PushButton::read_push(uint16_t timeout) {
   if (digitalRead(get_push_pin())) {
     // Get the timestamp of the HIGH signal
     uint32_t start_timestamp = millis();
     // Wail until the LOW signal
     while (digitalRead(get_push_pin())) {
-      yield();
+      // If, after the timeout, the signal is still not LOW
+      if ((millis() - start_timestamp) >= timeout) {
+        // Stop waiting
+        break;
+      }
     }
     // Set the duration of the last push to the number of milliseconds between the HIGH and the LOW signal
     set_last_push_duration(millis() - start_timestamp);

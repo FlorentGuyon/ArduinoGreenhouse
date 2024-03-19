@@ -52,7 +52,7 @@ public:
 
   // ########################################################################## OTHERS
 
-  bool read_push(void);
+  bool read_push(uint16_t timeout = -1);
 };
 
 #endif  // PUSHBUTTON_H
