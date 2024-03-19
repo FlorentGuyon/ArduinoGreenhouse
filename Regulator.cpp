@@ -47,9 +47,18 @@ uint8_t Regulator::get_count_thresholds(void) {
 
 // ############################################################################ OTHERS
 
+// Check if a threshold is reached
 void Regulator::check_thresholds() {
-  //
+  // Turn off the switch temporarily
+  Switchable::set_switch_value(false);
+  // Loop through all the thresholds
   for (int threshold_index = get_count_thresholds() -1 ; threshold_index >= 0 ; threshold_index--) {
-    Switchable::set_switch_value(get_threshold(threshold_index)->is_threshold_reached());  
+    // If at least one threshold is reached
+    if (get_threshold(threshold_index)->is_threshold_reached()) {
+      // turn the switch back on
+      Switchable::set_switch_value(true);
+      // And exit the loop
+      break;  
+    }
   }
 }
