@@ -219,6 +219,11 @@ Regulator fans;
 //LightSensor light_sensor; // V
 
 // ############################################################################ DEVICES THRESHOLDS
+// The thresholds indicate the each limit below/above which the corresponding device is turned on
+// - With a minimal threshold, the value as to be below to turn the device on
+// - With a maximal threshold, the value as to be above to turn the device on
+// The device is turned on if at least one of the threshold is reached
+// The device is turned off if no threshold is reached
 
 // HUMIDIFIER
 MinimalThreshold humidifier_humidity_threshold(&temperature_sensor._humidity, humidifier_humidity_minimal_threshold);
@@ -254,6 +259,9 @@ Threshold* fans_thresholds[fans_count_thresholds] = {
 
 // ############################################################################ DEVICES TO ACTIVATE
 
+// The switches hold the required state of the devices.
+// If its value is "true", the corresponding device will 
+// be turned on on the next call of the registers callback function
 bool* switches[count_registers * bit_per_register] = {
   &led_strip._switch_value,
   &humidifier._switch_value,
@@ -263,12 +271,15 @@ bool* switches[count_registers * bit_per_register] = {
 
 // ############################################################################ CALLBACK FUNCTIONS
 
+// The real time clock tells the time even after being powerd off
 void RealTimeClockRun() {
   Serial.print(F("Real time clock: "));
   Serial.println(real_time_clock.get_timedate());
 }
 
+// The temperature sensor reads the temperature and humidity of the air
 void TemperatureSensorRun() {
+  // Read the temperature and humidity of the air
   if (temperature_sensor.read_humidity_and_temperature()) {
     Serial.print(F("Temperature: "));
     Serial.print(temperature_sensor.get_temperature());
@@ -279,56 +290,70 @@ void TemperatureSensorRun() {
   }
 }
 
+// The humidifier increase the amount of moisture in the air
 void HumidifierRun() {
-  // Turn the humidifier "ON" if the humidity is below the threshold
+  // Turn the humidifier on if one of its thresholds is reached
   humidifier.check_thresholds();    
   Serial.print(F("Humidifier: "));
   Serial.println(humidifier.get_switch_value() ? F("ON") : F("OFF"));
 }
 
+// The gas sensor reads the level of CO2
 void GasSensorRun() {
-  gas_sensor.set_humidity(temperature_sensor.get_humidity());
+  // Update the temperature and humidity to correct the CO2 level value
   gas_sensor.set_temperature(temperature_sensor.get_temperature());
+  gas_sensor.set_humidity(temperature_sensor.get_humidity());
 
+  // Try to read the CO2 level
   if (gas_sensor.read_data()) {
     Serial.print(F("CO2 level: "));
     Serial.print(gas_sensor.get_gas_concentration());  
     Serial.println(F("ppm"));
-  } else {
+  }
+  // If it fails
+  else {
+    // Write it in the console
     Serial.println(F("Unable to read data from the gas sensor."));
   }
 }
 
+// The fans decrease the temperature, humidity and CO2 level
 void FansRun() {
-  // Turn the fans "ON" if the CO2 level is above the threshold 
+  // Turn the fans on if one of its thresholds is reached
   fans.check_thresholds();    
   Serial.print(F("Fans: "));
   Serial.println(fans.get_switch_value() ? F("ON") : F("OFF"));
 }
 
+// The light sensor reads the illuminance
 void LightSensorRun() {
   //
 }
 
+// The LED strip increases the illuminance
 void LEDStripRun() {
-  // Turn the LED strip "ON" if the illuminance is below the threshold
+  // Turn the LED strip on if one of its thresholds is reached
   led_strip.set_switch_value(false);    
   Serial.print(F("LED Strip: "));
   Serial.println(led_strip.get_switch_value() ? F("ON") : F("OFF"));
 }
 
+// The soil humidity sensor reads the amount of water in the soil
 void SoilHumiditySensorRun() {
   //
 }
 
+// The water pump irrigates the soils
 void WaterPumpRun() {
-  // Turn the water pump "ON" if the soil humidity is below the threshold
+  // Turn the water pump on if one of its thresholds is reached
   water_pump.set_switch_value(false);    
   Serial.print(F("Water pump: "));
   Serial.println(led_strip.get_switch_value() ? F("ON") : F("OFF"));
 }
 
+// The current sensor read the current drawn by the devices
 void CurrentSensorRun() {
+  // Read the current drawn
   if (current_sensor.read_current()) {
     Serial.print(F("Current: "));
     Serial.print(current_sensor.get_milliampere());
@@ -336,7 +361,9 @@ void CurrentSensorRun() {
   }
 }
 
+// The push button turn on the LCD screen or reboot the board
 void PushButtonRun() {
+  // Record the timestamp and duration of the push (if any), with a timeout 
   if (push_button.read_push(arduino_reset_push_duration)) {
     Serial.print(F("Last push timestamp: "));
     Serial.println(push_button.get_last_push_timestamp());
@@ -347,6 +374,7 @@ void PushButtonRun() {
   }
 }
 
+// The arduino reset does a soft reboot of the board with a long press on the push button
 void ArduinoResetRun() {  
   // If the last button pushing was long enough, reset the Arduino
   if (push_button.get_last_push_duration() >= arduino_reset_push_duration) {
@@ -363,6 +391,7 @@ void ArduinoResetRun() {
   }
 }
 
+// The LCD screen prints data about all the devices
 void LCDScreenRun() {
   // If the push button has been pressed at least once
   if (push_button.get_count_pushes() > 0) {
@@ -375,10 +404,11 @@ void LCDScreenRun() {
     if ((millis() - lcd_screen_last_print) > (lcd_screen_seconds_per_text * 1000)) {
       // If the prints are not done
       if (lcd_screen_text_index <= lcd_screen_count_texts -1) {
-        //
+        // Text to write on the LCD screen
         String text;
+        // Auto incremented variable for easy modifications
         uint8_t text_index = 0;
-        //
+        // Text to write on the LCD screen depending on the current index
         if (lcd_screen_text_index == text_index++) {text = real_time_clock.get_timedate();}
         if (lcd_screen_text_index == text_index++) {text = "Air humidity " + String(temperature_sensor.get_humidity()) + "%";}
         if (lcd_screen_text_index == text_index++) {text = "Humidifier " + String(humidifier.get_switch_value() ? "ON" : "OFF");} 
@@ -390,29 +420,34 @@ void LCDScreenRun() {
         //if (lcd_screen_text_index == text_index++) {text = "Illuminance " + String(light_sensor.get_illuminance()) + "lux";}
         if (lcd_screen_text_index == text_index++) {text = "LED strip " + String(led_strip.get_switch_value() ? "ON" : "OFF");}
         if (lcd_screen_text_index == text_index++) {text = "Current " + String(current_sensor.get_milliampere()) + "mA";} 
-        //
+        // Write the text on the LCD screen
         lcd_screen.write_text(text);
-        //
+        // Save the timestamp to wait the right amount of time before printing the next text
         lcd_screen_last_print = millis();
-        //
+        // Shift the next text to write by 1
         lcd_screen_text_index += 1;
       }
-      // If the prints are done
+      // If all the texts have been printed
       else {
+        // Clear the content of the LCD screen
         lcd_screen.clear();
+        // Turn off the backlight of the LCD screen
         lcd_screen.noBacklight();
       }
     }
   }
 }
 
+// The registers send a continuous HIGH signal to multiple devices 
 void RegistersRun() {
-  // Turn "ON" and "OFF" the output devices
+  // Send the state of each bit to the registers
   registers.flush_bits();
+  // Write in the console the state of each bit (switchable)
   Serial.print(F("Bits: "));
   registers.print_bits();
 }
 
+// The SD card stores data about all the devices
 void SDCardRun() {
   // Write in the console the texts written in the SD card
   Serial.print(F("SD Card: "));
@@ -441,6 +476,7 @@ void SDCardRun() {
     if (current_index == text_index++) {new_text = String(current_sensor.get_milliampere()) + F("\n");}            // Current consumption (mA)
     // Try to write the text in the SD card
     if (sd_card.write(sd_card_data_file, new_text)) {
+      // Write in the console the texts written in the SD card
       Serial.print(new_text);
     } 
     // If it fails
