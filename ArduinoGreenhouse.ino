@@ -7,7 +7,7 @@
   *
   *  A0
   *  A1   INPUT     Current sensor data pin (ACS712)
-  *  A2
+  *  A2   INPUT     Soil Humidity AO pin
   *  A3   INPUT     Gas sensor AO pin (MQ135)
   *  A4   OUTPUT    
   *  A5   OUTPUT    
@@ -46,7 +46,7 @@
 #include "RealTimeClock.h"      // Save real time
 #include "Regulator.h"          // Active a switch when a value is above or below a threshold
 //#include "LightSensor.h"        // Read the illuminance
-//#include "SoilHumiditySensor.h" // Read the amount of water in the soil
+#include "SoilHumiditySensor.h" // Read the amount of water in the soil
 
 // ############################################################################ TYPES
 
@@ -131,15 +131,16 @@ struct Task {
 
 // FANS
 #define fans_temperature_maximal_threshold 20 // °C
-#define fans_humidity_maximal_threshold 90 // %
-#define fans_co2_level_maximal_threshold 400 // %
+#define fans_air_humidity_maximal_threshold 95 // %
+#define fans_soil_humidity_maximal_threshold 75 // %
 #define fans_count_thresholds 3
 
 // LIGHT SENSOR
 #define light_sensor_frequency 10 * 60 * 1000UL // ms
 
 // SOIL HUMIDITY SENSOR
-#define soil_humidity_sensor_frequency 10 * 60 * 1000UL // ms
+#define soil_humidity_sensor_pin A2
+#define soil_humidity_sensor_frequency 1 * 60 * 1000UL // ms
 
 // ############################################################################ GLOBAL VARIABLES
 
@@ -187,7 +188,7 @@ Regulator humidifier; // 5V
 Regulator led_strip; // 5V
 Regulator water_pump; // 12V
 Regulator fans;
-//SoilHumiditySensor soil_humidity_sensor; // V
+SoilHumiditySensor soil_humidity_sensor(soil_humidity_sensor_pin); // 5V
 //LightSensor light_sensor; // V
 
 // ############################################################################ DEVICES THRESHOLDS
@@ -207,20 +208,21 @@ Threshold* humidifier_thresholds[humidifier_count_thresholds] = {
 // FANS
 MaximalThreshold fans_co2_level_threshold(&gas_sensor._gas_concentration, fans_co2_level_maximal_threshold);
 MaximalThreshold fans_temperature_threshold(&temperature_sensor._temperature, fans_temperature_maximal_threshold);
-MaximalThreshold fans_humidity_threshold(&temperature_sensor._humidity, fans_humidity_maximal_threshold);
+MaximalThreshold fans_air_humidity_threshold(&temperature_sensor._humidity, fans_air_humidity_maximal_threshold);
+MaximalThreshold fans_soil_humidity_threshold(&soil_humidity_sensor._humidity, fans_soil_humidity_maximal_threshold);
 
 Threshold* fans_thresholds[fans_count_thresholds] = {
   &fans_temperature_threshold,
-  &fans_humidity_threshold,
-  &fans_co2_level_threshold
+  &fans_air_humidity_threshold,
+  &fans_soil_humidity_threshold
 };
 
 // WATER PUMP
-//MinimalThreshold water_pump_soil_humidity_threshold(&soil_humidity_sensor._humidity, water_pump_soil_humidity_minimal_threshold);
+MinimalThreshold water_pump_soil_humidity_threshold(&soil_humidity_sensor._humidity, water_pump_soil_humidity_minimal_threshold);
 
-//Threshold water_pump_thresholds[water_pump_count_thresholds] = {
-//  &water_pump_soil_humidity_threshold
-//};
+Threshold* water_pump_thresholds[water_pump_count_thresholds] = {
+  &water_pump_soil_humidity_threshold
+};
 
 // LED STRIP
 //MinimalThreshold led_strip_illuminance_threshold(&light_sensor._illuminance, led_strip_illuminance_minimal_threshold);
@@ -324,10 +326,18 @@ void LEDStripRun() {
   RegistersRun();
 }
 
-// The soil humidity sensor reads the amount of water in the soil
+// The soil humidity sensor reads the moisture level of soil
 bool SoilHumiditySensorRun() {
+  // Read the soil humidity
+  soil_humidity_sensor.read_data();
+  // Write the data in the console
+  Serial.print(F("Soil humidity: "));
+  Serial.print(soil_humidity_sensor.get_humidity());  
+  Serial.println(F("%"));
   // Call the water pump callback function to check its thresholds
   WaterPumpRun();
+  // Call the fans callback function to check its thresholds
+  FansRun();
   //
   return true;
 }
@@ -413,8 +423,7 @@ void LCDScreenRun() {
         if (lcd_screen_text_index == text_index++) {text = "Humidifier " + String(humidifier.get_switch_value() ? "ON" : "OFF");} 
         if (lcd_screen_text_index == text_index++) {text = "Temperature " +  String(temperature_sensor.get_temperature()) + "C";}
         if (lcd_screen_text_index == text_index++) {text = "CO2 " + String(gas_sensor.get_gas_concentration()) + "ppm";} 
-        if (lcd_screen_text_index == text_index++) {text = "Fans " + String(fans.get_switch_value() ? "ON" : "OFF");}
-        //if (lcd_screen_text_index == text_index++) {text = "Soil humidity " + String(soil_humidity_sensor.get_humidity()) + "%";}
+        if (lcd_screen_text_index == text_index++) {text = "Soil hum. " + String(soil_humidity_sensor.get_humidity()) + "%";}
         if (lcd_screen_text_index == text_index++) {text = "Water pump " + String(water_pump.get_switch_value() ? "ON" : "OFF");}
         //if (lcd_screen_text_index == text_index++) {text = "Illuminance " + String(light_sensor.get_illuminance()) + "lux";}
         if (lcd_screen_text_index == text_index++) {text = "LED strip " + String(led_strip.get_switch_value() ? "ON" : "OFF");}
