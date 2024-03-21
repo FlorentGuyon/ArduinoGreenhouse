@@ -29,6 +29,9 @@ private:
 
   // PINS
   uint8_t _I2C_address;
+  
+  // DATA
+  bool _is_ready;
 
 public:
 
@@ -40,10 +43,18 @@ public:
   // ########################################################################## SETTERS
 
   void set_I2C_address(uint8_t I2C_address);
+  void set_is_ready(bool is_ready);
 
   // ########################################################################## GETTERS
 
   uint8_t get_I2C_address(void);
+  bool is_ready(void);
+  uint8_t get_year(void);
+  uint8_t get_month(void);
+  uint8_t get_day(void);
+  uint8_t get_hour(void);
+  uint8_t get_minute(void);
+  uint8_t get_second(void);
   String get_timedate(void);
 
   // ########################################################################## OTHERS

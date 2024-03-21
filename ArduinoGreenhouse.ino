@@ -101,6 +101,8 @@ struct Task {
 // LED STRIP
 #define led_strip_illuminance_minimal_threshold 500 // lux
 #define led_strip_count_thresholds 1
+#define led_stip_start_hour 7 // h
+#define led_stip_stop_hour 20 // h
 
 // REGISTERS
 #define registers_SER_pin 2
@@ -311,8 +313,15 @@ void FansRun() {
 }
 
 // The light sensor reads the illuminance
-bool LightSensorRun() {
-  // Try to read the illuminance
+bool LightSensorRun() {  
+  // In order to check if there is already enough light or if the LED stip is needed
+  // The LED strip has to be turned off before reading the illuminance
+  led_strip.set_switch_value(false);
+  // Call the registers callback function to apply the changes
+  RegistersRun();
+  // Wait some time for the LED strip to be turned off
+  delay(1000);
+  // Then, try to read the illuminance
   if (light_sensor.read_illuminance()) {
     // Write the data in the console
     Serial.print(F("Illuminance: "));
@@ -333,12 +342,17 @@ bool LightSensorRun() {
 
 // The LED strip increases the illuminance
 void LEDStripRun() {
-  // Turn the LED strip on if one of its thresholds is reached
-  led_strip.check_thresholds();    
+  // In order to reproduce a natrural light cycle, the LED strip has to stay turned off outside daytime, even if its minimal illuminance threshold is reached.
+  // If its daytime
+  if ((real_time_clock.get_hour() >= led_stip_start_hour) and (real_time_clock.get_hour() <= led_stip_stop_hour)) {
+    // Turn the LED strip on if one of its thresholds is reached
+    led_strip.check_thresholds();   
+    // Call the registers callback function to check the switches
+    RegistersRun();
+  } 
+  // Write the LED strip state in the console
   Serial.print(F("LED Strip: "));
   Serial.println(led_strip.get_switch_value() ? F("ON") : F("OFF"));
-  // Call the registers callback function to check the switches
-  RegistersRun();
 }
 
 // The soil humidity sensor reads the moisture level of soil
@@ -621,6 +635,11 @@ void setup() {
   real_time_clock.set_I2C_address(real_time_clock_I2C_address);
   real_time_clock.initialize();
   Serial.println(F("Done."));
+  // If the real time clock has been reset
+  if (!real_time_clock.is_ready()) {
+    // Write it in the console
+    Serial.println(F("The real time clock is not configured."));
+  }
 
   // END
   buzzer.pulse(50, 2, 50);
