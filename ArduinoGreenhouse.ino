@@ -403,7 +403,7 @@ void ArduinoResetRun() {
   // If the last button pushing was long enough, reset the Arduino
   if (push_button.get_last_push_duration() >= arduino_reset_push_duration) {
     // Write it in the console
-    Serial.print(F("Arduino reset..."));
+    Serial.println(F("Arduino reset..."));
     // Disable the watchdog timer to prevent automatic reset
     wdt_disable();
     // Delay to allow Serial to finish transmitting

@@ -1,9 +1,9 @@
 /**
-  * @file     humiditySensor.h
+  * @file     GasSensor.h
   * @version  V1.0
-  * @date     2017, May 31
+  * @date     2024, March 10
   * @author   Florent Guyon | florent.guyon@protonmail.com
-  * @brief    Definition of the humiditySensor class
+  * @brief    Definition of the GasSensor class
   *
   * MQ135 DOUT Pin -> None (is high when the gas concentration threshold is reached)
   * MQ135 AOUT Pin -> Arduino Analog A3 Pin (Gas)
