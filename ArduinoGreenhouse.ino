@@ -126,7 +126,7 @@ struct Task {
 #define real_time_clock_I2C_address 0x68
 
 // WATER PUMP
-#define water_pump_soil_humidity_minimal_threshold 50 // %
+#define water_pump_soil_humidity_minimal_threshold 70 // %
 #define water_pump_count_thresholds 1
 
 // FANS
@@ -358,9 +358,9 @@ bool SoilHumiditySensorRun() {
 // The water pump irrigates the soils
 void WaterPumpRun() {
   // Turn the water pump on if one of its thresholds is reached
-  water_pump.set_switch_value(false);    
+  water_pump.check_thresholds();    
   Serial.print(F("Water pump: "));
-  Serial.println(led_strip.get_switch_value() ? F("ON") : F("OFF"));
+  Serial.println(water_pump.get_switch_value() ? F("ON") : F("OFF"));
   // Call the registers callback function to check the switches
   RegistersRun();
 }
@@ -582,7 +582,7 @@ void setup() {
   
   // WATER PUMP
   Serial.print(F("Initializing water pump... "));
-  //water_pump.set_thresholds(water_pump_thresholds);
+  water_pump.set_thresholds(water_pump_thresholds);
   water_pump.set_count_thresholds(water_pump_count_thresholds);
   Serial.println(F("Done."));
   
