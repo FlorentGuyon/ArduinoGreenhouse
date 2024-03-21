@@ -95,7 +95,7 @@ struct Task {
 #define gas_sensor_frequency 10 * 60 * 1000UL // ms
 
 // HUMIDIFIER
-#define humidifier_humidity_minimal_threshold 50 // %
+#define humidifier_humidity_minimal_threshold 80 // %
 #define humidifier_count_thresholds 1
 
 // LED STRIP
@@ -130,7 +130,7 @@ struct Task {
 #define water_pump_count_thresholds 1
 
 // FANS
-#define fans_temperature_maximal_threshold 20 // °C
+#define fans_temperature_maximal_threshold 24 // °C
 #define fans_air_humidity_maximal_threshold 95 // %
 #define fans_soil_humidity_maximal_threshold 75 // %
 #define fans_count_thresholds 3
