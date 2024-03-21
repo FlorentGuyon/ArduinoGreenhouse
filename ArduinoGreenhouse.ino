@@ -133,7 +133,8 @@ struct Task {
 #define fans_temperature_maximal_threshold 24 // °C
 #define fans_air_humidity_maximal_threshold 95 // %
 #define fans_soil_humidity_maximal_threshold 75 // %
-#define fans_count_thresholds 3
+#define fans_co2_level_maximal_threshold 1000 // %
+#define fans_count_thresholds 4
 
 // LIGHT SENSOR
 #define light_sensor_frequency 1 * 60 * 1000UL // ms
@@ -212,6 +213,7 @@ MaximalThreshold fans_air_humidity_threshold(&temperature_sensor._humidity, fans
 MaximalThreshold fans_soil_humidity_threshold(&soil_humidity_sensor._humidity, fans_soil_humidity_maximal_threshold);
 
 Threshold* fans_thresholds[fans_count_thresholds] = {
+  &fans_co2_level_threshold,
   &fans_temperature_threshold,
   &fans_air_humidity_threshold,
   &fans_soil_humidity_threshold
