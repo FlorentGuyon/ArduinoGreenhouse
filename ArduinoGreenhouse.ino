@@ -45,7 +45,7 @@
 #include "PushButton.h"         // Read the pushes of a button
 #include "RealTimeClock.h"      // Save real time
 #include "Regulator.h"          // Active a switch when a value is above or below a threshold
-//#include "LightSensor.h"        // Read the illuminance
+#include "LightSensor.h"        // Read the illuminance
 #include "SoilHumiditySensor.h" // Read the amount of water in the soil
 
 // ############################################################################ TYPES
@@ -99,7 +99,7 @@ struct Task {
 #define humidifier_count_thresholds 1
 
 // LED STRIP
-#define led_strip_illuminance_minimal_threshold 1200 // lux
+#define led_strip_illuminance_minimal_threshold 500 // lux
 #define led_strip_count_thresholds 1
 
 // REGISTERS
@@ -136,7 +136,7 @@ struct Task {
 #define fans_count_thresholds 3
 
 // LIGHT SENSOR
-#define light_sensor_frequency 10 * 60 * 1000UL // ms
+#define light_sensor_frequency 1 * 60 * 1000UL // ms
 
 // SOIL HUMIDITY SENSOR
 #define soil_humidity_sensor_pin A2
@@ -189,7 +189,7 @@ Regulator led_strip; // 5V
 Regulator water_pump; // 12V
 Regulator fans;
 SoilHumiditySensor soil_humidity_sensor(soil_humidity_sensor_pin); // 5V
-//LightSensor light_sensor; // V
+LightSensor light_sensor; // 5V
 
 // ############################################################################ DEVICES THRESHOLDS
 // The thresholds indicate the each limit below/above which the corresponding device is turned on
@@ -225,11 +225,11 @@ Threshold* water_pump_thresholds[water_pump_count_thresholds] = {
 };
 
 // LED STRIP
-//MinimalThreshold led_strip_illuminance_threshold(&light_sensor._illuminance, led_strip_illuminance_minimal_threshold);
+MinimalThreshold led_strip_illuminance_threshold(&light_sensor._illuminance, led_strip_illuminance_minimal_threshold);
 
-//Threshold led_strip_thresholds[led_strip_count_thresholds] = {
-//  &led_strip_illuminance_threshold
-//};
+Threshold* led_strip_thresholds[led_strip_count_thresholds] = {
+  &led_strip_illuminance_threshold
+};
 
 // ############################################################################ DEVICES TO ACTIVATE
 
@@ -310,16 +310,29 @@ void FansRun() {
 
 // The light sensor reads the illuminance
 bool LightSensorRun() {
-  // Call the LED strip callback function to check its thresholds
-  LEDStripRun();
-  //
+  // Try to read the illuminance
+  if (light_sensor.read_illuminance()) {
+    // Write the data in the console
+    Serial.print(F("Illuminance: "));
+    Serial.print(light_sensor.get_illuminance());  
+    Serial.println(F("lux"));
+    // Call the LED strip callback function to check its thresholds
+    LEDStripRun();
+    // Quit the function with a success code
+    return true;
+  }
+  // If it fails
+  else {
+    // Quit the function with an error code
+    return false;
+  }
   return true;
 }
 
 // The LED strip increases the illuminance
 void LEDStripRun() {
   // Turn the LED strip on if one of its thresholds is reached
-  led_strip.set_switch_value(false);    
+  led_strip.check_thresholds();    
   Serial.print(F("LED Strip: "));
   Serial.println(led_strip.get_switch_value() ? F("ON") : F("OFF"));
   // Call the registers callback function to check the switches
@@ -425,7 +438,8 @@ void LCDScreenRun() {
         if (lcd_screen_text_index == text_index++) {text = "CO2 " + String(gas_sensor.get_gas_concentration()) + "ppm";} 
         if (lcd_screen_text_index == text_index++) {text = "Soil hum. " + String(soil_humidity_sensor.get_humidity()) + "%";}
         if (lcd_screen_text_index == text_index++) {text = "Water pump " + String(water_pump.get_switch_value() ? "ON" : "OFF");}
-        //if (lcd_screen_text_index == text_index++) {text = "Illuminance " + String(light_sensor.get_illuminance()) + "lux";}
+        if (lcd_screen_text_index == text_index++) {text = "Fans " + String(fans.get_switch_value() ? "ON" : "OFF");}
+        if (lcd_screen_text_index == text_index++) {text = "Light " + String(light_sensor.get_illuminance()) + "lux";}
         if (lcd_screen_text_index == text_index++) {text = "LED strip " + String(led_strip.get_switch_value() ? "ON" : "OFF");}
         if (lcd_screen_text_index == text_index++) {text = "Current " + String(current_sensor.get_milliampere()) + "mA";} 
         // Write the text on the LCD screen
@@ -554,10 +568,15 @@ void setup() {
   humidifier.set_thresholds(humidifier_thresholds);
   humidifier.set_count_thresholds(humidifier_count_thresholds);
   Serial.println(F("Done."));
+
+  // LIGHT SENSOR
+  Serial.print(F("Initializing light sensor... "));
+  light_sensor.initialize();
+  Serial.println(F("Done."));
   
   // LED STRIP
   Serial.print(F("Initializing LED strip... "));
-  //led_strip.set_thresholds(led_strip_thresholds);
+  led_strip.set_thresholds(led_strip_thresholds);
   led_strip.set_count_thresholds(led_strip_count_thresholds);
   Serial.println(F("Done."));
   

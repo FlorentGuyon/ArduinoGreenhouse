@@ -5,46 +5,53 @@
   * @author   Florent Guyon | florent.guyon@protonmail.com
   * @brief    Definition of the LightSensor class
   *
-  * +5V -> Light Dependent Resistor -> Arduino Uno Analog Pin A0 -> 10kohms Resistor -> Ground
+  * LightSensor GND Pin -> Ground
+  * LightSensor VCC Pin -> +5V
+  * LightSensor ADD Pin -> Ground
+  * LightSensor SDA Pin -> Arduino SDA Pin
+  * LightSensor SCL Pin -> Arduino SCL Pin
   *
   **/
 
 #include <stdint.h> // Definition of the uint8_t type
+#include "BH1750.h" // Definition of the BH1750 class
 
 #ifndef _LIGHTSENSOR_H_
 #define _LIGHTSENSOR_H_
 
-class LightSensor {
+class LightSensor : public BH1750::BH1750 {
 
-private:
+public:
 
   // ########################################################################## ATTRIBUTES
 
-  // PIN
-  uint8_t _resistance_pin;
+  // PINS
+  uint8_t _I2C_address;
 
   // DATA
   uint16_t _illuminance;
-
-public:
+  bool _is_ready;
   
   // ########################################################################## CONSTRUCTORS
 
-  LightSensor(uint8_t resistance_pin);
+  LightSensor(uint8_t I2C_address = 0x23);
 
   // ########################################################################## SETTERS
 
-  void set_resistance_pin(uint8_t resistance_pin);
+  void set_I2C_address(uint8_t I2C_address);
   void set_illuminance(uint16_t illuminance);
+  void set_is_ready(bool is_ready);
 
   // ########################################################################## GETTERS
   
-  uint8_t get_resistance_pin();
-  uint16_t get_illuminance();
+  uint8_t get_I2C_address(void);
+  uint16_t get_illuminance(void);
+  bool is_ready(void);
   
   // ########################################################################## OTHERS
 
-  void read_illuminance();
+  bool initialize(void);
+  bool read_illuminance(void);
 };
 
 #endif  // _LIGHTSENSOR_H_
