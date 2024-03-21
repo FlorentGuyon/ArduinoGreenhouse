@@ -200,17 +200,17 @@ LightSensor light_sensor; // 5V
 // The device is turned off if no threshold is reached
 
 // HUMIDIFIER
-MinimalThreshold humidifier_humidity_threshold(&temperature_sensor._humidity, humidifier_humidity_minimal_threshold);
+MinimalThreshold humidifier_humidity_threshold(&temperature_sensor._humidity, sizeof(temperature_sensor._humidity), humidifier_humidity_minimal_threshold);
 
 Threshold* humidifier_thresholds[humidifier_count_thresholds] = {
   &humidifier_humidity_threshold
 };
 
 // FANS
-MaximalThreshold fans_co2_level_threshold(&gas_sensor._gas_concentration, fans_co2_level_maximal_threshold);
-MaximalThreshold fans_temperature_threshold(&temperature_sensor._temperature, fans_temperature_maximal_threshold);
-MaximalThreshold fans_air_humidity_threshold(&temperature_sensor._humidity, fans_air_humidity_maximal_threshold);
-MaximalThreshold fans_soil_humidity_threshold(&soil_humidity_sensor._humidity, fans_soil_humidity_maximal_threshold);
+MaximalThreshold fans_co2_level_threshold(&gas_sensor._gas_concentration, sizeof(gas_sensor._gas_concentration), fans_co2_level_maximal_threshold);
+MaximalThreshold fans_temperature_threshold(&temperature_sensor._temperature, sizeof(temperature_sensor._temperature), fans_temperature_maximal_threshold);
+MaximalThreshold fans_air_humidity_threshold(&temperature_sensor._humidity, sizeof(temperature_sensor._humidity), fans_air_humidity_maximal_threshold);
+MaximalThreshold fans_soil_humidity_threshold(&soil_humidity_sensor._humidity, sizeof(soil_humidity_sensor._humidity), fans_soil_humidity_maximal_threshold);
 
 Threshold* fans_thresholds[fans_count_thresholds] = {
   &fans_co2_level_threshold,
@@ -220,14 +220,14 @@ Threshold* fans_thresholds[fans_count_thresholds] = {
 };
 
 // WATER PUMP
-MinimalThreshold water_pump_soil_humidity_threshold(&soil_humidity_sensor._humidity, water_pump_soil_humidity_minimal_threshold);
+MinimalThreshold water_pump_soil_humidity_threshold(&soil_humidity_sensor._humidity, sizeof(soil_humidity_sensor._humidity), water_pump_soil_humidity_minimal_threshold);
 
 Threshold* water_pump_thresholds[water_pump_count_thresholds] = {
   &water_pump_soil_humidity_threshold
 };
 
 // LED STRIP
-MinimalThreshold led_strip_illuminance_threshold(&light_sensor._illuminance, led_strip_illuminance_minimal_threshold);
+MinimalThreshold led_strip_illuminance_threshold(&light_sensor._illuminance, sizeof(light_sensor._illuminance), led_strip_illuminance_minimal_threshold);
 
 Threshold* led_strip_thresholds[led_strip_count_thresholds] = {
   &led_strip_illuminance_threshold

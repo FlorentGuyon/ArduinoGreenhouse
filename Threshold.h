@@ -18,7 +18,7 @@ public:
 
   // ########################################################################## CONSTRUCTORS
 
-  Threshold(void* value_address = nullptr, uint16_t threshold = 0);
+  Threshold(void* value_address = nullptr, size_t value_size = sizeof(uint8_t), uint16_t threshold = 0);
 
   // ########################################################################## ATTRIBUTES
 
@@ -53,7 +53,7 @@ public:
 
   // ########################################################################## CONSTRUCTORS
 
-  MinimalThreshold(void* value_address = nullptr, uint16_t threshold = (uint16_t) -1);
+  MinimalThreshold(void* value_address = nullptr, size_t value_size = sizeof(uint8_t), uint16_t threshold = (uint16_t) -1);
 
   // ########################################################################## OTHERS
   
@@ -69,7 +69,7 @@ public:
 
   // ########################################################################## CONSTRUCTORS
 
-  MaximalThreshold(void* value_address = nullptr, uint16_t threshold = (uint16_t) -1);
+  MaximalThreshold(void* value_address = nullptr, size_t value_size = sizeof(uint8_t), uint16_t threshold = (uint16_t) -1);
 
   // ########################################################################## OTHERS
   
