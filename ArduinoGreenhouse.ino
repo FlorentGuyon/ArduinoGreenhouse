@@ -86,7 +86,7 @@ struct Task {
 #define lcd_screen_I2C_address 0x27
 #define lcd_screen_count_columns 16
 #define lcd_screen_count_lines 2
-#define lcd_screen_count_texts 9
+#define lcd_screen_count_texts 11
 #define lcd_screen_seconds_per_text 2 // s
 #define lcd_screen_frequency 1 * 1000UL // ms
 
@@ -480,22 +480,22 @@ void SDCardRun() {
     // Auto incremented variable for easier modifications
     uint8_t text_index = 0;
     // Choose the text to write in the SD card depending on the current index
-    if (current_index == text_index++) {new_text = real_time_clock.get_timedate() + F(",");}                       // Timedate (yy-m-d h-m-s)
-    if (current_index == text_index++) {new_text = String(temperature_sensor.get_temperature()) + F(",");}         // Temperature (°C)
-    if (current_index == text_index++) {new_text = String(fans_temperature_maximal_threshold) + F(",");}           // Target temperature (°C)
-    if (current_index == text_index++) {new_text = String(gas_sensor.get_gas_concentration()) + F(",");}           // CO2 level (ppm)
-    if (current_index == text_index++) {new_text = String(fans_co2_level_maximal_threshold) + F(",");}             // Target CO2 level (ppm)
-    if (current_index == text_index++) {new_text = String(fans.get_switch_value() * 100) + F(",");}                // Fans usage (%)
-    if (current_index == text_index++) {new_text = String(temperature_sensor.get_humidity()) + F(",");}            // Air humidity (%)
-    if (current_index == text_index++) {new_text = String(humidifier_humidity_minimal_threshold) + F(",");}        // Target air humidity (%)
-    if (current_index == text_index++) {new_text = String(humidifier.get_switch_value() * 100) + F(",");}          // Humidifier usage (%)
-    if (current_index == text_index++) {new_text = String(/*soil_humidity_sensor.get_humidity()*/) + F(",");}      // Soil humidity (%)
-    if (current_index == text_index++) {new_text = String(water_pump_soil_humidity_minimal_threshold) + F(",");}   // Target soil humidity (%)
-    if (current_index == text_index++) {new_text = String(water_pump.get_switch_value() * 100) + F(",");}          // Water pump usage (%)
-    if (current_index == text_index++) {new_text = String(/*light_sensor.get_illuminance()*/) + F(",");}           // Illuminance (lux)
-    if (current_index == text_index++) {new_text = String(led_strip_illuminance_minimal_threshold) + F(",");}      // Target illuminance (lux)
-    if (current_index == text_index++) {new_text = String(led_strip.get_switch_value() * 100) + F(",");}           // LED strip usage (%)
-    if (current_index == text_index++) {new_text = String(current_sensor.get_milliampere()) + F("\n");}            // Current consumption (mA)
+    if (current_index == text_index++) {new_text = real_time_clock.get_timedate() + F(",");}                      // Timedate (yy-m-d h-m-s)
+    if (current_index == text_index++) {new_text = String(temperature_sensor.get_temperature()) + F(",");}        // Temperature (°C)
+    if (current_index == text_index++) {new_text = String(fans_temperature_maximal_threshold) + F(",");}          // Target temperature (°C)
+    if (current_index == text_index++) {new_text = String(gas_sensor.get_gas_concentration()) + F(",");}          // CO2 level (ppm)
+    if (current_index == text_index++) {new_text = String(fans_co2_level_maximal_threshold) + F(",");}            // Target CO2 level (ppm)
+    if (current_index == text_index++) {new_text = String(fans.get_switch_value() * 100) + F(",");}               // Fans usage (%)
+    if (current_index == text_index++) {new_text = String(temperature_sensor.get_humidity()) + F(",");}           // Air humidity (%)
+    if (current_index == text_index++) {new_text = String(humidifier_humidity_minimal_threshold) + F(",");}       // Target air humidity (%)
+    if (current_index == text_index++) {new_text = String(humidifier.get_switch_value() * 100) + F(",");}         // Humidifier usage (%)
+    if (current_index == text_index++) {new_text = String(soil_humidity_sensor.get_humidity()) + F(",");}         // Soil humidity (%)
+    if (current_index == text_index++) {new_text = String(water_pump_soil_humidity_minimal_threshold) + F(",");}  // Target soil humidity (%)
+    if (current_index == text_index++) {new_text = String(water_pump.get_switch_value() * 100) + F(",");}         // Water pump usage (%)
+    if (current_index == text_index++) {new_text = String(light_sensor.get_illuminance()) + F(",");}              // Illuminance (lux)
+    if (current_index == text_index++) {new_text = String(led_strip_illuminance_minimal_threshold) + F(",");}     // Target illuminance (lux)
+    if (current_index == text_index++) {new_text = String(led_strip.get_switch_value() * 100) + F(",");}          // LED strip usage (%)
+    if (current_index == text_index++) {new_text = String(current_sensor.get_milliampere()) + F("\n");}           // Current consumption (mA)
     // Try to write the text in the SD card
     if (sd_card.write(sd_card_data_file, new_text)) {
       // Write in the console the texts written in the SD card
