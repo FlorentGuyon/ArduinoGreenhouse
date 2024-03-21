@@ -18,22 +18,28 @@ public:
 
   // ########################################################################## CONSTRUCTORS
 
-  Threshold(uint8_t* value_address = nullptr, uint16_t threshold = 0);
+  Threshold(void* value_address = nullptr, uint16_t threshold = 0);
 
   // ########################################################################## ATTRIBUTES
 
-  uint8_t* _value_address; // Pointer to the value to check
+  void* _value_address; // Pointer to the value to check
+  size_t _value_size; // Size of the value (8 bits, 16 bits...)
   uint16_t _threshold; // Threshold above/below which the switch value will be set to true
 
   // ########################################################################## SETTERS
   
-  void set_value_address(uint8_t* value_address);
+  void set_value_address(void* value_address);
+  void set_value_size(size_t value_size);
   void set_threshold(uint16_t threshold);
 
   // ########################################################################## GETTERS
   
-  uint8_t* get_value_address(void);
+  void* get_value_address(void);
+  size_t get_value_size(void);
   uint16_t get_threshold(void);
+
+  // ########################################################################## OTHERS
+
   virtual bool is_threshold_reached(void);
 };
 
@@ -47,8 +53,7 @@ public:
 
   // ########################################################################## CONSTRUCTORS
 
-  MinimalThreshold(uint8_t* value_address = nullptr, uint16_t threshold = 65535);
-  MinimalThreshold(uint16_t* value_address = nullptr, uint16_t threshold = 65535);
+  MinimalThreshold(void* value_address = nullptr, uint16_t threshold = (uint16_t) -1);
 
   // ########################################################################## OTHERS
   
@@ -64,8 +69,7 @@ public:
 
   // ########################################################################## CONSTRUCTORS
 
-  MaximalThreshold(uint8_t* value_address = nullptr, uint16_t threshold = 65535);
-  MaximalThreshold(uint16_t* value_address = nullptr, uint16_t threshold = 65535);
+  MaximalThreshold(void* value_address = nullptr, uint16_t threshold = (uint16_t) -1);
 
   // ########################################################################## OTHERS
   
