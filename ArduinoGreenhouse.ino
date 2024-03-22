@@ -439,22 +439,52 @@ void LCDScreenRun() {
       // If the prints are not done
       if (lcd_screen_text_index <= lcd_screen_count_texts -1) {
         // Text to write on the LCD screen
-        String text;
+        String lines[lcd_screen_count_lines];
         // Auto incremented variable for easy modifications
         uint8_t text_index = 0;
         // Text to write on the LCD screen depending on the current index
-        if (lcd_screen_text_index == text_index++) {text = real_time_clock.get_timedate();}
-        if (lcd_screen_text_index == text_index++) {text = "Air humidity " + String(temperature_sensor.get_humidity()) + "%";}
-        if (lcd_screen_text_index == text_index++) {text = "Humidifier " + String(humidifier.get_switch_value() ? "ON" : "OFF");} 
-        if (lcd_screen_text_index == text_index++) {text = "Temperature " +  String(temperature_sensor.get_temperature()) + "C";}
-        if (lcd_screen_text_index == text_index++) {text = "CO2 " + String(gas_sensor.get_gas_concentration()) + "ppm";} 
-        if (lcd_screen_text_index == text_index++) {text = "Soil hum. " + String(soil_humidity_sensor.get_humidity()) + "%";}
-        if (lcd_screen_text_index == text_index++) {text = "Fans " + String(fans.get_switch_value() ? "ON" : "OFF");}
-        if (lcd_screen_text_index == text_index++) {text = "Light " + String(light_sensor.get_illuminance()) + "lux";}
-        if (lcd_screen_text_index == text_index++) {text = "LED strip " + String(led_strip.get_switch_value() ? "ON" : "OFF");}
-        if (lcd_screen_text_index == text_index++) {text = "Current " + String(current_sensor.get_milliampere()) + "mA";} 
+        if (lcd_screen_text_index == text_index++) {
+          lines[0] = "Timedate:";
+          lines[1] = real_time_clock.get_timedate();
+        }
+        if (lcd_screen_text_index == text_index++) {
+          lines[0] = "Air humidity:";
+          lines[1] = String(temperature_sensor.get_humidity()) + " %";
+        }
+        if (lcd_screen_text_index == text_index++) {
+          lines[0] = "Humidifier:";
+          lines[1] = String(humidifier.get_switch_value() ? "ON" : "OFF");
+        } 
+        if (lcd_screen_text_index == text_index++) {
+          lines[0] = "Temperature:";
+          lines[1] = String(temperature_sensor.get_temperature()) + " C";
+        }
+        if (lcd_screen_text_index == text_index++) {
+          lines[0] = "CO2 level:";
+          lines[1] = String(gas_sensor.get_gas_concentration()) + " ppm";
+        } 
+        if (lcd_screen_text_index == text_index++) {
+          lines[0] = "Soil humidity:";
+          lines[1] = String(soil_humidity_sensor.get_humidity()) + " %";
+        }
+        if (lcd_screen_text_index == text_index++) {
+          lines[0] = "Fans:";
+          lines[1] = String(fans.get_switch_value() ? "ON" : "OFF");
+        }
+        if (lcd_screen_text_index == text_index++) {
+          lines[0] = "Illuminance:";
+          lines[1] = String(light_sensor.get_illuminance()) + " lux";
+        }
+        if (lcd_screen_text_index == text_index++) {
+          lines[0] = "LED strip:";
+          lines[1] = String(led_strip.get_switch_value() ? "ON" : "OFF");
+        }
+        if (lcd_screen_text_index == text_index++) {
+          lines[0] = "Current:";
+          lines[1] = String(current_sensor.get_milliampere()) + " mA";
+        } 
         // Write the text on the LCD screen
-        lcd_screen.write_text(text);
+        lcd_screen.write_text(lines);
         // Save the timestamp to wait the right amount of time before printing the next text
         lcd_screen_last_print = millis();
         // Shift the next text to write by 1

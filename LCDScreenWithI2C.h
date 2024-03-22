@@ -49,6 +49,7 @@ public:
   void initialize(void);
   void write_text(const char* text);
   void write_text(const String text);
+  void write_text(const String* lines);
 };
 
 #endif  // LCDSCREENWITH_H

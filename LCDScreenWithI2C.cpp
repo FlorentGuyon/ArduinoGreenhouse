@@ -47,3 +47,12 @@ void LCDScreenWithI2C::write_text(const String text) {
   LiquidCrystal_I2C::print(text);
   LiquidCrystal_I2C::backlight();
 }
+
+void LCDScreenWithI2C::write_text(const String* lines) {
+  LiquidCrystal_I2C::clear();
+  for (uint8_t line_index = 0 ; line_index <= get_count_lines() -1 ; line_index++) {
+    LiquidCrystal_I2C::setCursor(0, line_index);
+    LiquidCrystal_I2C::print(lines[line_index]);
+  }
+  LiquidCrystal_I2C::backlight();
+}
