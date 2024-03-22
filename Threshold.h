@@ -7,7 +7,8 @@
   *
   **/
 
-#include <stdint.h> // Definition of the uintX_t type
+#include <Arduino.h> // Definition of the size_t type
+#include <stdint.h> // Definition of the uintX_t types
 
 #ifndef _THRESHOLD_H_
 #define _THRESHOLD_H_

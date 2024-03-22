@@ -8,11 +8,12 @@
   **/
 
 #include <stdint.h> // Definition of the uint8_t type
+#include "Thresholdable.h" // Definition of the Thresholdable class
 
 #ifndef _SWITCHABLE_H_
 #define _SWITCHABLE_H_
 
-class Switchable {
+class Switchable : public Thresholdable::Thresholdable {
 
 public:
 
@@ -26,8 +27,7 @@ public:
 
   // ########################################################################## CONSTRUCTORS
 
-  Switchable();
-  Switchable(uint8_t switch_pin);
+  Switchable(uint8_t switch_pin = (uint8_t) -1, Threshold** thresholds = nullptr, uint8_t count_thresholds = 0);
 
   // ########################################################################## SETTERS
   
@@ -43,7 +43,8 @@ public:
 
   void turn_switch_on();
   void turn_switch_off();
-  void toggle_switch_value();
+  void toggle_switch();
+  void check_thresholds();
 };
 
 #endif  // _SWITCHABLE_H_

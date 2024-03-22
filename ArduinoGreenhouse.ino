@@ -18,7 +18,7 @@
   *  12   OUTPUT    SD card MISO pin (forced)
   * ~11   INPUT     SD card MOSI pin (forced)
   * ~10   OUTPUT    SD card CS pin
-  * ~09
+  * ~09   OUTPUT    Water pump relay pin
   *  08   OUTPUT    Buzzer pin
   *  07   INPUT     Push button pin
   * ~06   INPUT     Temperature sensor OUT pin
@@ -44,7 +44,6 @@
 #include "LightSensor.h"        // Read the illuminance
 #include "PushButton.h"         // Read the pushes of a button
 #include "RealTimeClock.h"      // Save real time
-#include "Regulator.h"          // Active a switch when a value is above or below a threshold
 #include "LightSensor.h"        // Read the illuminance
 #include "SoilHumiditySensor.h" // Read the amount of water in the soil
 
@@ -86,7 +85,7 @@ struct Task {
 #define lcd_screen_I2C_address 0x27
 #define lcd_screen_count_columns 16
 #define lcd_screen_count_lines 2
-#define lcd_screen_count_texts 11
+#define lcd_screen_count_texts 10
 #define lcd_screen_seconds_per_text 2 // s
 #define lcd_screen_frequency 1 * 1000UL // ms
 
@@ -114,7 +113,7 @@ struct Task {
 // SD CARD
 #define sd_card_CS_pin 10
 #define sd_card_data_file "data.csv"
-#define sd_card_count_texts 16
+#define sd_card_count_texts 15
 #define sd_card_frequency 10 * 60 * 1000UL // ms
 
 // PUSH BUTTON
@@ -128,8 +127,10 @@ struct Task {
 #define real_time_clock_I2C_address 0x68
 
 // WATER PUMP
+#define water_pump_pin 9
 #define water_pump_soil_humidity_minimal_threshold 70 // %
 #define water_pump_count_thresholds 1
+#define water_pump_pulse_duration 5000 // ms
 
 // FANS
 #define fans_temperature_maximal_threshold 24 // °C
@@ -178,21 +179,21 @@ uint32_t soil_humidity_sensor_last_run = 0;
 
 // ############################################################################ DEVICES
 
-Register registers(registers_SER_pin, registers_RCK_pin, registers_SCK_pin); // 5V
-TemperatureSensor temperature_sensor(temperature_sensor_pin); // 3V
 CurrentSensor current_sensor(current_sensor_pin); // 5V
-LCDScreenWithI2C lcd_screen(lcd_screen_I2C_address, lcd_screen_count_columns, lcd_screen_count_lines); // 5V
 GasSensor gas_sensor(gas_sensor_pin); // 5V
+LCDScreenWithI2C lcd_screen(lcd_screen_I2C_address, lcd_screen_count_columns, lcd_screen_count_lines); // 5V
+LightSensor light_sensor; // 5V
 Pulsable buzzer(buzzer_pin); // 3V
-SDCard sd_card(sd_card_CS_pin); // 5V
+Pulsable water_pump; // 12V
 PushButton push_button(push_button_pin);
 RealTimeClock real_time_clock; // 5V
-Regulator humidifier; // 5V
-Regulator led_strip; // 5V
-Regulator water_pump; // 12V
-Regulator fans;
+Register registers(registers_SER_pin, registers_RCK_pin, registers_SCK_pin); // 5V
+SDCard sd_card(sd_card_CS_pin); // 5V
 SoilHumiditySensor soil_humidity_sensor(soil_humidity_sensor_pin); // 5V
-LightSensor light_sensor; // 5V
+Switchable humidifier; // 5V
+Switchable led_strip; // 12V
+Switchable fans; // 12V
+TemperatureSensor temperature_sensor(temperature_sensor_pin); // 3V
 
 // ############################################################################ DEVICES THRESHOLDS
 // The thresholds indicate the each limit below/above which the corresponding device is turned on
@@ -243,7 +244,6 @@ Threshold* led_strip_thresholds[led_strip_count_thresholds] = {
 bool* switches[count_registers * bit_per_register] = {
   &led_strip._switch_value,
   &humidifier._switch_value,
-  &water_pump._switch_value,
   &fans._switch_value
 };
 
@@ -374,11 +374,7 @@ bool SoilHumiditySensorRun() {
 // The water pump irrigates the soils
 void WaterPumpRun() {
   // Turn the water pump on if one of its thresholds is reached
-  water_pump.check_thresholds();    
-  Serial.print(F("Water pump: "));
-  Serial.println(water_pump.get_switch_value() ? F("ON") : F("OFF"));
-  // Call the registers callback function to check the switches
-  RegistersRun();
+  water_pump.check_thresholds(water_pump_pulse_duration);
 }
 
 // The current sensor read the current drawn by the devices
@@ -453,7 +449,6 @@ void LCDScreenRun() {
         if (lcd_screen_text_index == text_index++) {text = "Temperature " +  String(temperature_sensor.get_temperature()) + "C";}
         if (lcd_screen_text_index == text_index++) {text = "CO2 " + String(gas_sensor.get_gas_concentration()) + "ppm";} 
         if (lcd_screen_text_index == text_index++) {text = "Soil hum. " + String(soil_humidity_sensor.get_humidity()) + "%";}
-        if (lcd_screen_text_index == text_index++) {text = "Water pump " + String(water_pump.get_switch_value() ? "ON" : "OFF");}
         if (lcd_screen_text_index == text_index++) {text = "Fans " + String(fans.get_switch_value() ? "ON" : "OFF");}
         if (lcd_screen_text_index == text_index++) {text = "Light " + String(light_sensor.get_illuminance()) + "lux";}
         if (lcd_screen_text_index == text_index++) {text = "LED strip " + String(led_strip.get_switch_value() ? "ON" : "OFF");}
@@ -507,7 +502,6 @@ void SDCardRun() {
     if (current_index == text_index++) {new_text = String(humidifier.get_switch_value() * 100) + F(",");}         // Humidifier usage (%)
     if (current_index == text_index++) {new_text = String(soil_humidity_sensor.get_humidity()) + F(",");}         // Soil humidity (%)
     if (current_index == text_index++) {new_text = String(water_pump_soil_humidity_minimal_threshold) + F(",");}  // Target soil humidity (%)
-    if (current_index == text_index++) {new_text = String(water_pump.get_switch_value() * 100) + F(",");}         // Water pump usage (%)
     if (current_index == text_index++) {new_text = String(light_sensor.get_illuminance()) + F(",");}              // Illuminance (lux)
     if (current_index == text_index++) {new_text = String(led_strip_illuminance_minimal_threshold) + F(",");}     // Target illuminance (lux)
     if (current_index == text_index++) {new_text = String(led_strip.get_switch_value() * 100) + F(",");}          // LED strip usage (%)
@@ -598,6 +592,7 @@ void setup() {
   
   // WATER PUMP
   Serial.print(F("Initializing water pump... "));
+  water_pump.set_pulse_pin(water_pump_pin);
   water_pump.set_thresholds(water_pump_thresholds);
   water_pump.set_count_thresholds(water_pump_count_thresholds);
   Serial.println(F("Done."));

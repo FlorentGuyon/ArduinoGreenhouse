@@ -12,11 +12,7 @@
 
 // ############################################################################ CONSTRUCTORS
 
-Switchable::Switchable() {
-  set_switch_value(false);
-}
-
-Switchable::Switchable(uint8_t switch_pin) {
+Switchable::Switchable(uint8_t switch_pin, Threshold** thresholds = nullptr, uint8_t count_thresholds = 0) : Thresholdable(thresholds, count_thresholds) {
   set_switch_pin(switch_pin);
   set_switch_value(false);
 }
@@ -51,16 +47,47 @@ bool Switchable::get_switch_value() {
 // ############################################################################ OTHER
 
 void Switchable::turn_switch_on() {
-	digitalWrite(get_switch_pin(), HIGH);
+  // If the switch pin is set
+  if (get_switch_pin() != (uint8_t) -1) {
+    // Send it a high signal
+	  digitalWrite(get_switch_pin(), HIGH);
+  }
+  // Save the new value
   set_switch_value(true);
 }
 
 void Switchable::turn_switch_off() {
-	digitalWrite(get_switch_pin(), LOW);
+  // If the switch pin is set
+  if (get_switch_pin() != (uint8_t) -1) {
+    // Send it a low signal
+	  digitalWrite(get_switch_pin(), LOW);
+  }
+  // Save the new value
   set_switch_value(false);
 }
 
-void Switchable::toggle_switch_value() {
-  digitalWrite(get_switch_pin(), !get_switch_value() ? HIGH : LOW);
-  set_switch_value(!get_switch_value());
+void Switchable::toggle_switch() {
+  // If the switch is on
+  if (get_switch_value()) {
+    // turn it off
+    turn_switch_off();
+  }
+  // Else, if the switch is off
+  else {
+    // Turn it on
+    turn_switch_on();
+  }
+}
+
+void Switchable::check_thresholds() {
+  // If at least one threshold is reached
+  if (Thresholdable::are_thresholds_reached()) {
+    // Turn the switch on
+    turn_switch_on();
+  } 
+  // Else, if no threshold is reached
+  else {
+    // Turn the switch off
+    turn_switch_off();
+  }
 }
