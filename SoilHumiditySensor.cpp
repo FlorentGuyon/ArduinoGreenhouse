@@ -52,11 +52,11 @@ void SoilHumiditySensor::read_data(void) {
     analogValue = minimal_analog_value;
   }
   // Else, if the value is more than the maximum expected
-  else if (analogValue > maximal_analog_aalue) {
+  else if (analogValue > maximal_analog_value) {
     // Set the value to the maximum expected
-    analogValue = maximal_analog_aalue;
+    analogValue = maximal_analog_value;
   }
   // Map the corrected analog value with a scale of 0% to 100%
   // And reverse it, as the analog value decrease when the soil humidity increase
-  set_humidity(100 - map(analogValue, minimal_analog_value, maximal_analog_aalue, 0, 100));
+  set_humidity(100 - map(analogValue, minimal_analog_value, maximal_analog_value, 0, 100));
 }
