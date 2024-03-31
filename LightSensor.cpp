@@ -12,9 +12,12 @@
 
 // ############################################################################ CONSTRUCTORS
 
-LightSensor::LightSensor(uint8_t I2C_address) : BH1750(I2C_address) {
+LightSensor::LightSensor(uint8_t I2C_address, uint8_t minimum_acceptable_illuminance = 0, uint8_t maximum_acceptable_illuminance = 10000, uint8_t illuminance_tolerance = 10000) : BH1750(I2C_address) {
   set_I2C_address(I2C_address);
-  set_illuminance(0);
+  set_illuminance(new SensorValue16Bits());
+  get_illuminance()->set_minimum_acceptable(minimum_acceptable_illuminance);
+  get_illuminance()->set_maximum_acceptable(maximum_acceptable_illuminance);
+  get_illuminance()->set_tolerance(illuminance_tolerance);
 }
 
 // ############################################################################ SETTERS
@@ -23,7 +26,7 @@ void LightSensor::set_I2C_address(uint8_t I2C_address) {
   this->_I2C_address = I2C_address;
 }
 
-void LightSensor::set_illuminance(uint16_t illuminance) {
+void LightSensor::set_illuminance(SensorValue16Bits* illuminance) {
   this->_illuminance = illuminance;
 }
 
@@ -33,7 +36,7 @@ uint8_t LightSensor::get_I2C_address(void) {
     return this->_I2C_address;
 }
 
-uint16_t LightSensor::get_illuminance(void) {
+SensorValue16Bits* LightSensor::get_illuminance(void) {
     return this->_illuminance;
 }
 
@@ -73,14 +76,15 @@ bool LightSensor::read_illuminance(void) {
   // Wait for the module to be ready to read the soil humidity
   while (!BH1750::measurementReady());
   // Try to read the illuminance
-  float illuminance = BH1750::readLightLevel();
-  // If it fails
-  if (illuminance < 0) {
-    // Quit the function with an error code
+  uint16_t illuminance = BH1750::readLightLevel();
+  // If the current value is invalid
+  if (!get_illuminance()->validate(illuminance)) {
+    // Write it in the console
+    Serial.print(F("Error: The illuminance is invalid: "));
+    Serial.println(illuminance);
+    // Quit the method with an error code
     return false;
   }
-  // If it succeeds, save it
-  set_illuminance(illuminance);
-  // Quit the function with a success code
+  // Else, quit the method with a success code
   return true;
 }

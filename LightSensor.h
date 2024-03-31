@@ -15,6 +15,7 @@
 
 #include <stdint.h> // Definition of the uint8_t type
 #include "BH1750.h" // Definition of the BH1750 class
+#include "SensorValue.h" // Definition of the SensorValue class
 
 #ifndef _LIGHTSENSOR_H_
 #define _LIGHTSENSOR_H_
@@ -29,23 +30,23 @@ public:
   uint8_t _I2C_address;
 
   // DATA
-  uint16_t _illuminance;
+  SensorValue16Bits* _illuminance;
   bool _is_ready;
   
   // ########################################################################## CONSTRUCTORS
 
-  LightSensor(uint8_t I2C_address = 0x23);
+  LightSensor(uint8_t I2C_address = 0x23, uint8_t minimum_acceptable_illuminance = 0, uint8_t maximum_acceptable_illuminance = 10000, uint8_t illuminance_tolerance = 10000);
 
   // ########################################################################## SETTERS
 
   void set_I2C_address(uint8_t I2C_address);
-  void set_illuminance(uint16_t illuminance);
+  void set_illuminance(SensorValue16Bits* illuminance);
   void set_is_ready(bool is_ready);
 
   // ########################################################################## GETTERS
   
   uint8_t get_I2C_address(void);
-  uint16_t get_illuminance(void);
+  SensorValue16Bits* get_illuminance(void);
   bool is_ready(void);
   
   // ########################################################################## OTHERS

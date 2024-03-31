@@ -76,10 +76,19 @@ struct Task {
 // TEMPERATURE SENSOR
 #define temperature_sensor_pin 6
 #define temperature_sensor_frequency 10 * 60 * 1000UL // ms
+#define temperature_sensor_minimum_acceptable_temperature 5 // °C
+#define temperature_sensor_maximum_acceptable_temperature 30 // °C
+#define temperature_sensor_temperature_tolerance 2 // °C
+#define temperature_sensor_minimum_acceptable_humidity 10 // %
+#define temperature_sensor_maximum_acceptable_humidity 100 // %
+#define temperature_sensor_humidity_tolerance 10 // %
 
 // CURRENT SENSOR
 #define current_sensor_pin A1
 #define current_sensor_frequency 60 * 1000UL // ms
+#define current_sensor_minimum_acceptable_milliampere 25 // mA
+#define current_sensor_maximum_acceptable_milliampere 3000 // mA
+#define current_sensor_milliampere_tolerance 200 // mA
 
 // LCD SCREEN
 #define lcd_screen_I2C_address 0x27
@@ -92,6 +101,9 @@ struct Task {
 // GAS SENSOR
 #define gas_sensor_pin A3
 #define gas_sensor_frequency 10 * 60 * 1000UL // ms
+#define gas_sensor_minimum_acceptable_gas_concentration 50 // ppm
+#define gas_sensor_maximum_acceptable_gas_concentration 2000 // ppm
+#define gas_sensor_gas_concentration_tolerance 100 // ppm
 
 // HUMIDIFIER
 #define humidifier_humidity_minimal_threshold 80 // %
@@ -114,7 +126,7 @@ struct Task {
 #define sd_card_CS_pin 10
 #define sd_card_data_file "data.csv"
 #define sd_card_count_texts 15
-#define sd_card_frequency 10 * 60 * 1000UL // ms
+#define sd_card_frequency 60 * 60 * 1000UL // ms
 
 // PUSH BUTTON
 #define push_button_pin 7
@@ -140,11 +152,17 @@ struct Task {
 #define fans_count_thresholds 4
 
 // LIGHT SENSOR
-#define light_sensor_frequency 1 * 60 * 1000UL // ms
+#define light_sensor_frequency 10 * 60 * 1000UL // ms
+#define light_sensor_minimum_acceptable_illuminance 0 // lux
+#define light_sensor_maximum_acceptable_illuminance 10000 // lux
+#define light_sensor_illuminance_tolerance 100 // lux
 
 // SOIL HUMIDITY SENSOR
 #define soil_humidity_sensor_pin A2
-#define soil_humidity_sensor_frequency 1 * 60 * 1000UL // ms
+#define soil_humidity_sensor_frequency 10 * 60 * 1000UL // ms
+#define soil_humidity_sensor_minimum_acceptable_humidity 0 // %
+#define soil_humidity_sensor_maximum_acceptable_humidity 100 // %
+#define soil_humidity_sensor_humidity_tolerance 5 // %
 
 // ############################################################################ GLOBAL VARIABLES
 
@@ -203,17 +221,17 @@ TemperatureSensor temperature_sensor(temperature_sensor_pin); // 3V
 // The device is turned off if no threshold is reached
 
 // HUMIDIFIER
-MinimalThreshold humidifier_humidity_threshold(&temperature_sensor._humidity, sizeof(temperature_sensor._humidity), humidifier_humidity_minimal_threshold);
+MinimalThreshold humidifier_humidity_threshold(&temperature_sensor.get_humidity()->_value, sizeof(temperature_sensor.get_humidity()->_value), humidifier_humidity_minimal_threshold);
 
 Threshold* humidifier_thresholds[humidifier_count_thresholds] = {
   &humidifier_humidity_threshold
 };
 
 // FANS
-MaximalThreshold fans_co2_level_threshold(&gas_sensor._gas_concentration, sizeof(gas_sensor._gas_concentration), fans_co2_level_maximal_threshold);
-MaximalThreshold fans_temperature_threshold(&temperature_sensor._temperature, sizeof(temperature_sensor._temperature), fans_temperature_maximal_threshold);
-MaximalThreshold fans_air_humidity_threshold(&temperature_sensor._humidity, sizeof(temperature_sensor._humidity), fans_air_humidity_maximal_threshold);
-MaximalThreshold fans_soil_humidity_threshold(&soil_humidity_sensor._humidity, sizeof(soil_humidity_sensor._humidity), fans_soil_humidity_maximal_threshold);
+MaximalThreshold fans_co2_level_threshold(&gas_sensor.get_gas_concentration()->_value, sizeof(gas_sensor.get_gas_concentration()->_value), fans_co2_level_maximal_threshold);
+MaximalThreshold fans_temperature_threshold(&temperature_sensor.get_temperature()->_value, sizeof(temperature_sensor.get_temperature()->_value), fans_temperature_maximal_threshold);
+MaximalThreshold fans_air_humidity_threshold(&temperature_sensor.get_humidity()->_value, sizeof(temperature_sensor.get_humidity()->_value), fans_air_humidity_maximal_threshold);
+MaximalThreshold fans_soil_humidity_threshold(&soil_humidity_sensor.get_humidity()->_value, sizeof(soil_humidity_sensor.get_humidity()->_value), fans_soil_humidity_maximal_threshold);
 
 Threshold* fans_thresholds[fans_count_thresholds] = {
   &fans_co2_level_threshold,
@@ -223,14 +241,14 @@ Threshold* fans_thresholds[fans_count_thresholds] = {
 };
 
 // WATER PUMP
-MinimalThreshold water_pump_soil_humidity_threshold(&soil_humidity_sensor._humidity, sizeof(soil_humidity_sensor._humidity), water_pump_soil_humidity_minimal_threshold);
+MinimalThreshold water_pump_soil_humidity_threshold(&soil_humidity_sensor.get_humidity()->_value, sizeof(soil_humidity_sensor.get_humidity()->_value), water_pump_soil_humidity_minimal_threshold);
 
 Threshold* water_pump_thresholds[water_pump_count_thresholds] = {
   &water_pump_soil_humidity_threshold
 };
 
 // LED STRIP
-MinimalThreshold led_strip_illuminance_threshold(&light_sensor._illuminance, sizeof(light_sensor._illuminance), led_strip_illuminance_minimal_threshold);
+MinimalThreshold led_strip_illuminance_threshold(&light_sensor.get_illuminance()->_value, sizeof(light_sensor.get_illuminance()->_value), led_strip_illuminance_minimal_threshold);
 
 Threshold* led_strip_thresholds[led_strip_count_thresholds] = {
   &led_strip_illuminance_threshold
@@ -255,10 +273,10 @@ bool TemperatureSensorRun() {
   if (temperature_sensor.read_humidity_and_temperature()) {
     // Write the data in the console
     Serial.print(F("Temperature: "));
-    Serial.print(temperature_sensor.get_temperature());
+    Serial.print(temperature_sensor.get_temperature()->get_value());
     Serial.println(F("°C"));
     Serial.print(F("Humidity: "));
-    Serial.print(temperature_sensor.get_humidity());
+    Serial.print(temperature_sensor.get_humidity()->get_value());
     Serial.println(F("%"));
     // Call the humidifier callback function to check its thresholds
     HumidifierRun();
@@ -286,7 +304,7 @@ bool GasSensorRun() {
   // Try to read the CO2 level
   if (gas_sensor.read_data()) {
     Serial.print(F("CO2 level: "));
-    Serial.print(gas_sensor.get_gas_concentration());  
+    Serial.print(gas_sensor.get_gas_concentration()->get_value());  
     Serial.println(F("ppm"));
     // Call the fans callback function to check its thresholds
     FansRun();
@@ -325,7 +343,7 @@ bool LightSensorRun() {
   if (light_sensor.read_illuminance()) {
     // Write the data in the console
     Serial.print(F("Illuminance: "));
-    Serial.print(light_sensor.get_illuminance());  
+    Serial.print(light_sensor.get_illuminance()->get_value());  
     Serial.println(F("lux"));
     // Call the LED strip callback function to check its thresholds
     LEDStripRun();
@@ -357,18 +375,24 @@ void LEDStripRun() {
 
 // The soil humidity sensor reads the moisture level of soil
 bool SoilHumiditySensorRun() {
-  // Read the soil humidity
-  soil_humidity_sensor.read_data();
-  // Write the data in the console
-  Serial.print(F("Soil humidity: "));
-  Serial.print(soil_humidity_sensor.get_humidity());  
-  Serial.println(F("%"));
-  // Call the water pump callback function to check its thresholds
-  WaterPumpRun();
-  // Call the fans callback function to check its thresholds
-  FansRun();
-  //
-  return true;
+  // Try to read the soil humidity
+  if (soil_humidity_sensor.read_data()) {
+    // Write the data in the console
+    Serial.print(F("Soil humidity: "));
+    Serial.print(soil_humidity_sensor.get_humidity()->get_value());  
+    Serial.println(F("%"));
+    // Call the water pump callback function to check its thresholds
+    WaterPumpRun();
+    // Call the fans callback function to check its thresholds
+    FansRun();
+    // Quit the function with a success code
+    return true;
+  } 
+  // If it fails
+  else {
+    // Quit the function with an error code
+    return false;
+  }
 }
 
 // The water pump irrigates the soils
@@ -382,7 +406,7 @@ bool CurrentSensorRun() {
   // Try to read the current drawn
   if (current_sensor.read_current()) {
     Serial.print(F("Current: "));
-    Serial.print(current_sensor.get_milliampere());
+    Serial.print(current_sensor.get_milliampere()->get_value());
     Serial.println(F("mA"));
     //
     return true;
@@ -449,7 +473,7 @@ void LCDScreenRun() {
         }
         if (lcd_screen_text_index == text_index++) {
           lines[0] = "Air humidity:";
-          lines[1] = String(temperature_sensor.get_humidity()) + " %";
+          lines[1] = String(temperature_sensor.get_humidity()->get_value()) + " %";
         }
         if (lcd_screen_text_index == text_index++) {
           lines[0] = "Humidifier:";
@@ -457,15 +481,15 @@ void LCDScreenRun() {
         } 
         if (lcd_screen_text_index == text_index++) {
           lines[0] = "Temperature:";
-          lines[1] = String(temperature_sensor.get_temperature()) + " C";
+          lines[1] = String(temperature_sensor.get_temperature()->get_value()) + " C";
         }
         if (lcd_screen_text_index == text_index++) {
           lines[0] = "CO2 level:";
-          lines[1] = String(gas_sensor.get_gas_concentration()) + " ppm";
+          lines[1] = String(gas_sensor.get_gas_concentration()->get_value()) + " ppm";
         } 
         if (lcd_screen_text_index == text_index++) {
           lines[0] = "Soil humidity:";
-          lines[1] = String(soil_humidity_sensor.get_humidity()) + " %";
+          lines[1] = String(soil_humidity_sensor.get_humidity()->get_value()) + " %";
         }
         if (lcd_screen_text_index == text_index++) {
           lines[0] = "Fans:";
@@ -473,7 +497,7 @@ void LCDScreenRun() {
         }
         if (lcd_screen_text_index == text_index++) {
           lines[0] = "Illuminance:";
-          lines[1] = String(light_sensor.get_illuminance()) + " lux";
+          lines[1] = String(light_sensor.get_illuminance()->get_value()) + " lux";
         }
         if (lcd_screen_text_index == text_index++) {
           lines[0] = "LED strip:";
@@ -481,7 +505,7 @@ void LCDScreenRun() {
         }
         if (lcd_screen_text_index == text_index++) {
           lines[0] = "Current:";
-          lines[1] = String(current_sensor.get_milliampere()) + " mA";
+          lines[1] = String(current_sensor.get_milliampere()->get_value()) + " mA";
         } 
         // Write the text on the LCD screen
         lcd_screen.write_text(lines);
@@ -512,6 +536,12 @@ void RegistersRun() {
 
 // The SD card stores data about all the devices
 void SDCardRun() {
+  // If it is the first call of the SD card callback function
+  if (sd_card_last_run == 0) {
+    // Exit the function with a success code
+    // So the data are saved in the SD card only from the second call, once the sensor values are stable averages
+    return true;
+  }
   // Write in the console the texts written in the SD card
   Serial.print(F("SD Card: "));
   // Text written in the SD card
@@ -521,21 +551,21 @@ void SDCardRun() {
     // Auto incremented variable for easier modifications
     uint8_t text_index = 0;
     // Choose the text to write in the SD card depending on the current index
-    if (current_index == text_index++) {new_text = real_time_clock.get_timedate() + F(",");}                      // Timedate (yy-m-d h-m-s)
-    if (current_index == text_index++) {new_text = String(temperature_sensor.get_temperature()) + F(",");}        // Temperature (°C)
-    if (current_index == text_index++) {new_text = String(fans_temperature_maximal_threshold) + F(",");}          // Target temperature (°C)
-    if (current_index == text_index++) {new_text = String(gas_sensor.get_gas_concentration()) + F(",");}          // CO2 level (ppm)
-    if (current_index == text_index++) {new_text = String(fans_co2_level_maximal_threshold) + F(",");}            // Target CO2 level (ppm)
-    if (current_index == text_index++) {new_text = String(fans.get_switch_value() * 100) + F(",");}               // Fans usage (%)
-    if (current_index == text_index++) {new_text = String(temperature_sensor.get_humidity()) + F(",");}           // Air humidity (%)
-    if (current_index == text_index++) {new_text = String(humidifier_humidity_minimal_threshold) + F(",");}       // Target air humidity (%)
-    if (current_index == text_index++) {new_text = String(humidifier.get_switch_value() * 100) + F(",");}         // Humidifier usage (%)
-    if (current_index == text_index++) {new_text = String(soil_humidity_sensor.get_humidity()) + F(",");}         // Soil humidity (%)
-    if (current_index == text_index++) {new_text = String(water_pump_soil_humidity_minimal_threshold) + F(",");}  // Target soil humidity (%)
-    if (current_index == text_index++) {new_text = String(light_sensor.get_illuminance()) + F(",");}              // Illuminance (lux)
-    if (current_index == text_index++) {new_text = String(led_strip_illuminance_minimal_threshold) + F(",");}     // Target illuminance (lux)
-    if (current_index == text_index++) {new_text = String(led_strip.get_switch_value() * 100) + F(",");}          // LED strip usage (%)
-    if (current_index == text_index++) {new_text = String(current_sensor.get_milliampere()) + F("\n");}           // Current consumption (mA)
+    if (current_index == text_index++) {new_text = real_time_clock.get_timedate() + F(",");}                              // Timedate (yy-m-d h-m-s)
+    if (current_index == text_index++) {new_text = String(temperature_sensor.get_temperature()->get_average()) + F(",");} // Temperature (°C)
+    if (current_index == text_index++) {new_text = String(fans_temperature_maximal_threshold) + F(",");}                  // Target temperature (°C)
+    if (current_index == text_index++) {new_text = String(gas_sensor.get_gas_concentration()->get_average()) + F(",");}     // CO2 level (ppm)
+    if (current_index == text_index++) {new_text = String(fans_co2_level_maximal_threshold) + F(",");}                    // Target CO2 level (ppm)
+    if (current_index == text_index++) {new_text = String(fans.get_switch_value() * 100) + F(",");}                       // Fans usage (%)
+    if (current_index == text_index++) {new_text = String(temperature_sensor.get_humidity()->get_average()) + F(",");}    // Air humidity (%)
+    if (current_index == text_index++) {new_text = String(humidifier_humidity_minimal_threshold) + F(",");}               // Target air humidity (%)
+    if (current_index == text_index++) {new_text = String(humidifier.get_switch_value() * 100) + F(",");}                 // Humidifier usage (%)
+    if (current_index == text_index++) {new_text = String(soil_humidity_sensor.get_humidity()->get_average()) + F(",");}    // Soil humidity (%)
+    if (current_index == text_index++) {new_text = String(water_pump_soil_humidity_minimal_threshold) + F(",");}          // Target soil humidity (%)
+    if (current_index == text_index++) {new_text = String(light_sensor.get_illuminance()->get_average()) + F(",");}         // Illuminance (lux)
+    if (current_index == text_index++) {new_text = String(led_strip_illuminance_minimal_threshold) + F(",");}             // Target illuminance (lux)
+    if (current_index == text_index++) {new_text = String(led_strip.get_switch_value() * 100) + F(",");}                  // LED strip usage (%)
+    if (current_index == text_index++) {new_text = String(current_sensor.get_milliampere()->get_average()) + F("\n");}      // Current consumption (mA)
     // Try to write the text in the SD card
     if (sd_card.write(sd_card_data_file, new_text)) {
       // Write in the console the texts written in the SD card
@@ -553,6 +583,13 @@ void SDCardRun() {
       return false;
     }
   }
+  // Reset the average values of the sensors between two lines of data
+  temperature_sensor.get_temperature()->reset_average();
+  temperature_sensor.get_humidity()->reset_average();
+  soil_humidity_sensor.get_humidity()->reset_average();
+  light_sensor.get_illuminance()->reset_average();
+  gas_sensor.get_gas_concentration()->reset_average();
+  current_sensor.get_milliampere()->reset_average();
   //
   return true;
 }
@@ -594,13 +631,19 @@ void setup() {
 
   // TEMPERATURE SENSOR
   Serial.print(F("Initializing temperature sensor... "));
+  temperature_sensor.get_temperature()->set_minimum_acceptable(temperature_sensor_minimum_acceptable_temperature);
+  temperature_sensor.get_temperature()->set_maximum_acceptable(temperature_sensor_maximum_acceptable_temperature);
+  temperature_sensor.get_temperature()->set_tolerance(temperature_sensor_temperature_tolerance);
   temperature_sensor.initialize();
   Serial.println(F("Done."));
 
   // GAS SENSOR
   Serial.print(F("Initializing gas sensor... "));
-  gas_sensor.set_temperature_address(&temperature_sensor._temperature);
-  gas_sensor.set_humidity_address(&temperature_sensor._humidity);
+  gas_sensor.get_gas_concentration()->set_minimum_acceptable(gas_sensor_minimum_acceptable_gas_concentration);
+  gas_sensor.get_gas_concentration()->set_maximum_acceptable(gas_sensor_maximum_acceptable_gas_concentration);
+  gas_sensor.get_gas_concentration()->set_tolerance(gas_sensor_gas_concentration_tolerance);
+  gas_sensor.set_temperature_address(&temperature_sensor.get_temperature()->_value);
+  gas_sensor.set_humidity_address(&temperature_sensor.get_humidity()->_value);
   Serial.println(F("Done."));
 
   // HUMIDIFIER
@@ -611,6 +654,9 @@ void setup() {
 
   // LIGHT SENSOR
   Serial.print(F("Initializing light sensor... "));
+  light_sensor.get_illuminance()->set_minimum_acceptable(light_sensor_minimum_acceptable_illuminance);
+  light_sensor.get_illuminance()->set_maximum_acceptable(light_sensor_maximum_acceptable_illuminance);
+  light_sensor.get_illuminance()->set_tolerance(light_sensor_illuminance_tolerance);
   light_sensor.initialize();
   Serial.println(F("Done."));
   
@@ -652,6 +698,9 @@ void setup() {
 
   // CURRENT SENSOR
   Serial.print(F("Initializing current sensor... "));
+  current_sensor.get_milliampere()->set_minimum_acceptable(current_sensor_minimum_acceptable_milliampere);
+  current_sensor.get_milliampere()->set_maximum_acceptable(current_sensor_maximum_acceptable_milliampere);
+  current_sensor.get_milliampere()->set_tolerance(current_sensor_milliampere_tolerance);
   current_sensor.initialize();
   Serial.println(F("Done."));
 

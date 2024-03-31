@@ -15,9 +15,12 @@
 
 // ############################################################################ CONSTRUCTORS
 
-SoilHumiditySensor::SoilHumiditySensor(uint8_t sensor_pin) {
+SoilHumiditySensor::SoilHumiditySensor(uint8_t sensor_pin, uint8_t minimum_acceptable_humidity, uint8_t maximum_acceptable_humidity, uint8_t humidity_tolerance) {
   set_sensor_pin(sensor_pin);
-  set_humidity(0);
+  set_humidity(new SensorValue8Bits());
+  get_humidity()->set_minimum_acceptable(minimum_acceptable_humidity);
+  get_humidity()->set_maximum_acceptable(maximum_acceptable_humidity);
+  get_humidity()->set_tolerance(humidity_tolerance);
 }
 
 // ############################################################################ SETTERS
@@ -27,7 +30,7 @@ void SoilHumiditySensor::set_sensor_pin(uint8_t sensor_pin) {
   pinMode(sensor_pin, INPUT);
 }
 
-void SoilHumiditySensor::set_humidity(uint8_t humidity) {
+void SoilHumiditySensor::set_humidity(SensorValue8Bits* humidity) {
   this->_humidity = humidity;
 }
 
@@ -37,13 +40,13 @@ uint8_t SoilHumiditySensor::get_sensor_pin(void) {
   return this->_sensor_pin;
 }
 
-uint8_t SoilHumiditySensor::get_humidity(void) {
+SensorValue8Bits* SoilHumiditySensor::get_humidity(void) {
   return this->_humidity;
 }
 
 // ############################################################################ OTHER
 
-void SoilHumiditySensor::read_data(void) {
+bool SoilHumiditySensor::read_data(void) {
   // Read the humidity
   uint16_t analogValue = analogRead(get_sensor_pin());
   // If the value is less than the minimal expected
@@ -58,5 +61,15 @@ void SoilHumiditySensor::read_data(void) {
   }
   // Map the corrected analog value with a scale of 0% to 100%
   // And reverse it, as the analog value decrease when the soil humidity increase
-  set_humidity(100 - map(analogValue, minimal_analog_value, maximal_analog_value, 0, 100));
+  uint8_t humidity = 100 - map(analogValue, minimal_analog_value, maximal_analog_value, 0, 100);
+  // If the current value is invalid
+  if (!get_humidity()->validate(humidity)) {
+    // Write it in the console
+    Serial.print(F("Error: The humidity is invalid: "));
+    Serial.println(humidity);
+    // Quit the method with an error code
+    return false;
+  }
+  // Else, quit the method with a success code
+  return true;
 }

@@ -11,11 +11,17 @@
 
 // ############################################################################ CONSTRUCTORS
 
-TemperatureSensor::TemperatureSensor(uint8_t sensor_pin) : AM2302::AM2302_Sensor(sensor_pin) {
+TemperatureSensor::TemperatureSensor(uint8_t sensor_pin, uint8_t minimum_acceptable_temperature, uint8_t maximum_acceptable_temperature, uint8_t temperature_tolerance, uint8_t minimum_acceptable_humidity, uint8_t maximum_acceptable_humidity, uint8_t humidity_tolerance) : AM2302::AM2302_Sensor(sensor_pin) {
   set_sensor_pin(sensor_pin);
   set_ready(false);
-  set_humidity(0);
-  set_temperature(0);
+  set_temperature(new SensorValue8Bits());
+  get_temperature()->set_minimum_acceptable(minimum_acceptable_temperature);
+  get_temperature()->set_maximum_acceptable(maximum_acceptable_temperature);
+  get_temperature()->set_tolerance(temperature_tolerance);
+  set_humidity(new SensorValue8Bits());
+  get_humidity()->set_minimum_acceptable(minimum_acceptable_humidity);
+  get_humidity()->set_maximum_acceptable(maximum_acceptable_humidity);
+  get_humidity()->set_tolerance(humidity_tolerance);
 }
 
 // ############################################################################ SETTERS
@@ -25,19 +31,16 @@ void TemperatureSensor::set_sensor_pin(uint8_t sensor_pin) {
   pinMode(sensor_pin, INPUT);
 }
 
-bool TemperatureSensor::set_ready(bool is_ready) {
+void TemperatureSensor::set_ready(bool is_ready) {
   this->_is_ready = is_ready;
-  return true;
 }
 
-bool TemperatureSensor::set_humidity(uint8_t humidity) {
+void TemperatureSensor::set_humidity(SensorValue8Bits* humidity) {
   this->_humidity = humidity;
-  return true;
 }
 
-bool TemperatureSensor::set_temperature(uint8_t temperature) {
+void TemperatureSensor::set_temperature(SensorValue8Bits* temperature) {
   this->_temperature = temperature;
-  return true;
 }
 
 // ############################################################################ GETTERS
@@ -50,11 +53,11 @@ uint8_t TemperatureSensor::get_sensor_pin(void) {
   return this->_sensor_pin;
 }
 
-uint8_t TemperatureSensor::get_humidity(void) {
+SensorValue8Bits* TemperatureSensor::get_humidity(void) {
   return this->_humidity;
 }
 
-uint8_t TemperatureSensor::get_temperature(void) {
+SensorValue8Bits* TemperatureSensor::get_temperature(void) {
   return this->_temperature;
 }
 
@@ -75,23 +78,23 @@ bool TemperatureSensor::initialize(void) {
 
 bool TemperatureSensor::read_humidity_and_temperature(void) {
   if (!is_ready()) {
-    Serial.println("Error: The temperature sensor is not ready.");
+    Serial.println(F("Error: The temperature sensor is not ready."));
     return false;
   }
 
   if (AM2302::AM2302_Sensor::read() != AM2302::AM2302_READ_OK) {
-    Serial.println("Error: The temperature sensor failed to read data.");
+    Serial.println(F("Error: The temperature sensor failed to read data."));
     return false;
   }
 
-  if (!set_temperature(AM2302::AM2302_Sensor::get_Temperature())) {
-    Serial.println("Error: The temperature sensor failed to save temperature.");
-    return false;
+  if (!get_temperature()->validate(AM2302::AM2302_Sensor::get_Temperature())) {
+    Serial.print(F("Error: The temperature is invalid: "));
+    Serial.println(AM2302::AM2302_Sensor::get_Temperature());
   }
 
-  if (!set_humidity(AM2302::AM2302_Sensor::get_Temperature())) {
-    Serial.println("Error: The temperature sensor failed to save humidity.");
-    return false;
+  if (!get_humidity()->validate(AM2302::AM2302_Sensor::get_Humidity())) {
+    Serial.print(F("Error: The humidity is invalid: "));
+    Serial.println(AM2302::AM2302_Sensor::get_Humidity());
   }
 
   return true;

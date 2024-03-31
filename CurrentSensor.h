@@ -13,6 +13,7 @@
 
 #include <stdint.h> // Definition of the uint8_t type
 #include <ACS712.h> // https://www.arduino.cc/reference/en/libraries/acs712/
+#include "SensorValue.h" // Definition of the SensorValue16Bits class
 
 #ifndef CURRENTSENSOR_H
 #define CURRENTSENSOR_H
@@ -27,27 +28,27 @@ private:
   uint8_t _sensor_pin;
 
   // DATA
-  uint8_t _milliampere;
+  SensorValue16Bits* _milliampere;
 
 public:
 
   // ########################################################################## CONSTRUCTORS
 
-  CurrentSensor(uint8_t _sensor_pin);
+  CurrentSensor(uint8_t _sensor_pin, uint8_t minimum_acceptable_milliampere = 0, uint8_t maximum_acceptable_milliampere = 3000, uint8_t milliampere_tolerance = 3000);
 
   // ########################################################################## SETTERS
 
   void set_sensor_pin(uint8_t _sensor_pin);
-  void set_milliampere(uint8_t milliampere);
+  void set_milliampere(SensorValue16Bits* milliampere);
 
   // ########################################################################## GETTERS
 
   uint8_t get_sensor_pin(void);
-  uint8_t get_milliampere(void);
+  SensorValue16Bits* get_milliampere(void);
 
   // ########################################################################## OTHER
 
-  bool initialize(void);
+  void initialize(void);
   bool read_current(void);
 };
 

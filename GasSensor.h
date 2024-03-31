@@ -15,6 +15,7 @@
 
 #include <stdint.h> // Definition of the uint8_t type
 #include <MQ135.h> // Definition of the MQ135 class
+#include "SensorValue.h" // Definition of the SensorValue class
 
 #ifndef GASSENSOR_H
 #define GASSENSOR_H
@@ -47,25 +48,25 @@ public:
   // DATA
   uint8_t* _humidity_address; // 30.00%
   uint8_t* _temperature_address; // 20.00°C
-  uint16_t _gas_concentration; // 600ppm
+  SensorValue16Bits* _gas_concentration; // 600ppm
 
   // ########################################################################## CONSTRUCTORS
 
-  GasSensor(uint8_t sensor_pin, uint8_t* humidity_address = nullptr, uint8_t* temperature_address = nullptr);
+  GasSensor(uint8_t sensor_pin, uint8_t* humidity_address = nullptr, uint8_t* temperature_address = nullptr, uint8_t minimum_acceptable_gas_concentration = 0, uint8_t maximum_acceptable_gas_concentration = 2000, uint8_t gas_concentration_tolerance = 2000);
 
   // ########################################################################## SETTERS
 
   void set_sensor_pin(uint8_t sensor_pin);
   bool set_humidity_address(uint8_t* humidity_address);
   bool set_temperature_address(uint8_t* temperature_address);
-  bool set_gas_concentration(uint16_t gas_concentration);
+  bool set_gas_concentration(SensorValue16Bits* gas_concentration);
 
   // ########################################################################## GETTERS
 
   uint8_t get_sensor_pin(void);
   uint8_t* get_humidity_address(void);
   uint8_t* get_temperature_address(void);
-  uint16_t get_gas_concentration(void);
+  SensorValue16Bits* get_gas_concentration(void);
 
   // ########################################################################## OTHER
 

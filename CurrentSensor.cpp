@@ -16,9 +16,12 @@
 //  ACS712 20A uses 100 mV per A
 //  ACS712 30A uses  66 mV per A
 
-CurrentSensor::CurrentSensor(uint8_t sensor_pin) : ACS712(sensor_pin, 5.0, 1023, 185) {
+CurrentSensor::CurrentSensor(uint8_t sensor_pin, uint8_t minimum_acceptable_milliampere, uint8_t maximum_acceptable_milliampere, uint8_t milliampere_tolerance) : ACS712(sensor_pin, 5.0, 1023, 185) {
   set_sensor_pin(sensor_pin);
-  set_milliampere(0);
+  set_milliampere(new SensorValue16Bits());
+  get_milliampere()->set_minimum_acceptable(minimum_acceptable_milliampere);
+  get_milliampere()->set_maximum_acceptable(maximum_acceptable_milliampere);
+  get_milliampere()->set_tolerance(milliampere_tolerance);
 }
 
 // ############################################################################ SETTERS
@@ -28,7 +31,7 @@ void CurrentSensor::set_sensor_pin(uint8_t sensor_pin) {
   pinMode(sensor_pin, INPUT);
 }
 
-void CurrentSensor::set_milliampere(uint8_t milliampere) {
+void CurrentSensor::set_milliampere(SensorValue16Bits* milliampere) {
   this->_milliampere = milliampere;
 }
 
@@ -38,17 +41,27 @@ uint8_t CurrentSensor::get_sensor_pin(void) {
   return this->_sensor_pin;
 }
 
-uint8_t CurrentSensor::get_milliampere(void) {
+SensorValue16Bits* CurrentSensor::get_milliampere(void) {
   return this->_milliampere;
 }
 
 // ############################################################################ FUNCTIONS
 
-bool CurrentSensor::initialize(void) {
+void CurrentSensor::initialize(void) {
   ACS712::autoMidPointDC();
 }
 
 bool CurrentSensor::read_current(void) {
-  set_milliampere(ACS712::mA_DC());
+  // Read the current drawn
+  uint16_t current_value = ACS712::mA_DC();
+  // If the current value is invalid
+  if (!get_milliampere()->validate(current_value)) {
+    // Write it in the console
+    Serial.print(F("Error: The current is invalid: "));
+    Serial.println(current_value);
+    // Quit the method with an error code
+    return false;
+  }
+  // Else, quit the method with a success code
   return true;
 }

@@ -62,22 +62,36 @@ bool MinimalThreshold::is_threshold_reached() {
     // Write it in the console
     Serial.println(F("Unable to check threshold. Value address is null."));
     // Quit the function with an error code
-    return -1;
+    return false;
   }
   // If the threshold is unset
   if (get_threshold() == (uint16_t) -1) {
     // Write it in the console
     Serial.println(F("Unable to check threshold. Threshold is null."));
     // Quit the function with an error code
-    return -1;
+    return false;
   }
   // If the value is 8 bits long
   if (get_value_size() == sizeof(uint8_t)) {
+    // If the value is null
+    if (*static_cast<uint8_t*>(get_value_address()) == (uint8_t) -1) {
+      // Write it in the console
+      Serial.println(F("Unable to check threshold. Value address is null."));
+      // Quit the function with an error code
+      return false;
+    }
     // Cast it and compare it with the threshold
     return (*static_cast<uint8_t*>(get_value_address()) < get_threshold());
   } 
   // If the value is 16 bits long
   else if (get_value_size() == sizeof(uint16_t)) {
+    // If the value is null
+    if (*static_cast<uint16_t*>(get_value_address()) == (uint16_t) -1) {
+      // Write it in the console
+      Serial.println(F("Unable to check threshold. Value address is null."));
+      // Quit the function with an error code
+      return false;
+    }
     // Cast it and compare it with the threshold
     return (*static_cast<uint16_t*>(get_value_address()) < get_threshold());
   } 
@@ -108,10 +122,24 @@ bool MaximalThreshold::is_threshold_reached() {
   }
   //
   if (get_value_size() == sizeof(uint8_t)) {
+    // If the value is null
+    if (*static_cast<uint8_t*>(get_value_address()) == (uint8_t) -1) {
+      // Write it in the console
+      Serial.println(F("Unable to check threshold. Value address is null."));
+      // Quit the function with an error code
+      return false;
+    }
     return (*static_cast<uint8_t*>(get_value_address()) > get_threshold());
   } 
   //
   else if (get_value_size() == sizeof(uint16_t)) {
+    // If the value is null
+    if (*static_cast<uint16_t*>(get_value_address()) == (uint16_t) -1) {
+      // Write it in the console
+      Serial.println(F("Unable to check threshold. Value address is null."));
+      // Quit the function with an error code
+      return false;
+    }
     return (*static_cast<uint16_t*>(get_value_address()) > get_threshold());
   }
 }

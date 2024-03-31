@@ -13,6 +13,7 @@
   **/
 
 #include <stdint.h> // Definition of the uintX_t types
+#include "SensorValue.h" // Definition of the SensorValue8Bits types
 
 #ifndef SOILHUMIDITYSENSOR_H
 #define SOILHUMIDITYSENSOR_H
@@ -27,25 +28,25 @@ public:
   uint8_t _sensor_pin; // Analog input
 
   // DATA
-  uint8_t _humidity; // %
+  SensorValue8Bits* _humidity; // %
 
   // ########################################################################## CONSTRUCTORS
 
-  SoilHumiditySensor(uint8_t sensor_pin);
+  SoilHumiditySensor(uint8_t sensor_pin, uint8_t minimum_acceptable_humidity = 0, uint8_t maximum_acceptable_humidity = 100, uint8_t humidity_tolerance = 100);
 
   // ########################################################################## SETTERS
 
   void set_sensor_pin(uint8_t sensor_pin);
-  void set_humidity(uint8_t humidity);
+  void set_humidity(SensorValue8Bits* humidity);
 
   // ########################################################################## GETTERS
 
   uint8_t get_sensor_pin(void);
-  uint8_t get_humidity(void);
+  SensorValue8Bits* get_humidity(void);
 
   // ########################################################################## OTHER
 
-  void read_data(void);
+  bool read_data(void);
 };
 
 #endif  // SOILHUMIDITYSENSOR_H
