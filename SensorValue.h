@@ -68,12 +68,12 @@ public:
   uint8_t get_minimum_acceptable(void);
   uint8_t get_maximum_acceptable(void);
   uint8_t get_tolerance(void);
-  uint8_t get_count_readings(void);
   uint8_t get_average(void);
 
   // ########################################################################## OTHERS
 
   void reset_average(void);
+  void print(void);
   bool validate(uint8_t new_value);
 };
 
@@ -116,6 +116,7 @@ public:
   // ########################################################################## OTHERS
 
   void reset_average(void);
+  void print(void);
   bool validate(uint16_t new_value);
 };
 

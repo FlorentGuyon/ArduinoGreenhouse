@@ -272,20 +272,18 @@ bool TemperatureSensorRun() {
   // Try to read the temperature and humidity of the air
   if (temperature_sensor.read_humidity_and_temperature()) {
     // Write the data in the console
-    Serial.print(F("Temperature: "));
-    Serial.print(temperature_sensor.get_temperature()->get_value());
-    Serial.println(F("°C"));
-    Serial.print(F("Humidity: "));
-    Serial.print(temperature_sensor.get_humidity()->get_value());
-    Serial.println(F("%"));
+    Serial.print(F("Temperature (°C): "));
+    temperature_sensor.get_temperature()->print();
+    Serial.print(F("Humidity (%): "));
+    temperature_sensor.get_humidity()->print();
     // Call the humidifier callback function to check its thresholds
     HumidifierRun();
     // Call the fans callback function to check its thresholds
     FansRun();
-    //
+    // Quit the function with a success code
     return true;
   } 
-  //
+  // Quit the function with an error code
   return false;
 }
 
@@ -303,9 +301,8 @@ void HumidifierRun() {
 bool GasSensorRun() {
   // Try to read the CO2 level
   if (gas_sensor.read_data()) {
-    Serial.print(F("CO2 level: "));
-    Serial.print(gas_sensor.get_gas_concentration()->get_value());  
-    Serial.println(F("ppm"));
+    Serial.print(F("CO2 level (ppm): "));
+    gas_sensor.get_gas_concentration()->print();
     // Call the fans callback function to check its thresholds
     FansRun();
     //
@@ -342,9 +339,8 @@ bool LightSensorRun() {
   // Then, try to read the illuminance
   if (light_sensor.read_illuminance()) {
     // Write the data in the console
-    Serial.print(F("Illuminance: "));
-    Serial.print(light_sensor.get_illuminance()->get_value());  
-    Serial.println(F("lux"));
+    Serial.print(F("Illuminance (lux): "));
+    light_sensor.get_illuminance()->print();
     // Call the LED strip callback function to check its thresholds
     LEDStripRun();
     // Quit the function with a success code
@@ -378,9 +374,8 @@ bool SoilHumiditySensorRun() {
   // Try to read the soil humidity
   if (soil_humidity_sensor.read_data()) {
     // Write the data in the console
-    Serial.print(F("Soil humidity: "));
-    Serial.print(soil_humidity_sensor.get_humidity()->get_value());  
-    Serial.println(F("%"));
+    Serial.print(F("Soil humidity (%): "));
+    soil_humidity_sensor.get_humidity()->print();
     // Call the water pump callback function to check its thresholds
     WaterPumpRun();
     // Call the fans callback function to check its thresholds
@@ -403,11 +398,11 @@ void WaterPumpRun() {
 
 // The current sensor read the current drawn by the devices
 bool CurrentSensorRun() {
+  return true;
   // Try to read the current drawn
   if (current_sensor.read_current()) {
-    Serial.print(F("Current: "));
-    Serial.print(current_sensor.get_milliampere()->get_value());
-    Serial.println(F("mA"));
+    Serial.print(F("Current (mA): "));
+    current_sensor.get_milliampere()->print();
     //
     return true;
   }
@@ -450,7 +445,7 @@ void ArduinoResetRun() {
 }
 
 // The LCD screen prints data about all the devices
-void LCDScreenRun() {
+bool LCDScreenRun() {
   // If the push button has been pressed at least once
   if (push_button.get_count_pushes() > 0) {
     // If a new push happend
@@ -523,6 +518,8 @@ void LCDScreenRun() {
       }
     }
   }
+  // Quit the function with a success code
+  return true;
 }
 
 // The registers send a continuous HIGH signal to multiple devices 
@@ -535,7 +532,7 @@ void RegistersRun() {
 }
 
 // The SD card stores data about all the devices
-void SDCardRun() {
+bool SDCardRun() {
   // If it is the first call of the SD card callback function
   if (sd_card_last_run == 0) {
     // Exit the function with a success code
@@ -554,18 +551,18 @@ void SDCardRun() {
     if (current_index == text_index++) {new_text = real_time_clock.get_timedate() + F(",");}                              // Timedate (yy-m-d h-m-s)
     if (current_index == text_index++) {new_text = String(temperature_sensor.get_temperature()->get_average()) + F(",");} // Temperature (°C)
     if (current_index == text_index++) {new_text = String(fans_temperature_maximal_threshold) + F(",");}                  // Target temperature (°C)
-    if (current_index == text_index++) {new_text = String(gas_sensor.get_gas_concentration()->get_average()) + F(",");}     // CO2 level (ppm)
+    if (current_index == text_index++) {new_text = String(gas_sensor.get_gas_concentration()->get_average()) + F(",");}   // CO2 level (ppm)
     if (current_index == text_index++) {new_text = String(fans_co2_level_maximal_threshold) + F(",");}                    // Target CO2 level (ppm)
     if (current_index == text_index++) {new_text = String(fans.get_switch_value() * 100) + F(",");}                       // Fans usage (%)
     if (current_index == text_index++) {new_text = String(temperature_sensor.get_humidity()->get_average()) + F(",");}    // Air humidity (%)
     if (current_index == text_index++) {new_text = String(humidifier_humidity_minimal_threshold) + F(",");}               // Target air humidity (%)
     if (current_index == text_index++) {new_text = String(humidifier.get_switch_value() * 100) + F(",");}                 // Humidifier usage (%)
-    if (current_index == text_index++) {new_text = String(soil_humidity_sensor.get_humidity()->get_average()) + F(",");}    // Soil humidity (%)
+    if (current_index == text_index++) {new_text = String(soil_humidity_sensor.get_humidity()->get_average()) + F(",");}  // Soil humidity (%)
     if (current_index == text_index++) {new_text = String(water_pump_soil_humidity_minimal_threshold) + F(",");}          // Target soil humidity (%)
-    if (current_index == text_index++) {new_text = String(light_sensor.get_illuminance()->get_average()) + F(",");}         // Illuminance (lux)
+    if (current_index == text_index++) {new_text = String(light_sensor.get_illuminance()->get_average()) + F(",");}       // Illuminance (lux)
     if (current_index == text_index++) {new_text = String(led_strip_illuminance_minimal_threshold) + F(",");}             // Target illuminance (lux)
     if (current_index == text_index++) {new_text = String(led_strip.get_switch_value() * 100) + F(",");}                  // LED strip usage (%)
-    if (current_index == text_index++) {new_text = String(current_sensor.get_milliampere()->get_average()) + F("\n");}      // Current consumption (mA)
+    if (current_index == text_index++) {new_text = String(current_sensor.get_milliampere()->get_average()) + F("\n");}    // Current consumption (mA)
     // Try to write the text in the SD card
     if (sd_card.write(sd_card_data_file, new_text)) {
       // Write in the console the texts written in the SD card

@@ -92,6 +92,21 @@ void SensorValue8Bits::reset_average(void) {
   SensorValue::set_count_readings(0);
 }
 
+void SensorValue8Bits::print(void) {
+  Serial.print(F("Value: "));
+  Serial.print(get_value());
+  Serial.print(F(", Average: "));
+  Serial.print(get_average());
+  Serial.print(F(", Readings: "));
+  Serial.print(get_count_readings());
+  Serial.print(F(", Minimum: "));
+  Serial.print(get_minimum_acceptable());
+  Serial.print(F(", Maximum: "));
+  Serial.print(get_maximum_acceptable());
+  Serial.print(F(", Tolerance: "));
+  Serial.println(get_tolerance());
+}
+
 bool SensorValue8Bits::validate(uint8_t new_value) {
   // Check if the value is within acceptable range
   if (new_value < get_minimum_acceptable() || new_value > get_maximum_acceptable()) {
@@ -184,6 +199,21 @@ uint16_t SensorValue16Bits::get_average(void) {
 void SensorValue16Bits::reset_average(void) {
   set_average((uint16_t) -1);
   SensorValue::set_count_readings(0);
+}
+
+void SensorValue16Bits::print(void) {
+  Serial.print(F("Value: "));
+  Serial.print(get_value());
+  Serial.print(F(", Average: "));
+  Serial.print(get_average());
+  Serial.print(F(", Readings: "));
+  Serial.print(get_count_readings());
+  Serial.print(F(", Minimum: "));
+  Serial.print(get_minimum_acceptable());
+  Serial.print(F(", Maximum: "));
+  Serial.print(get_maximum_acceptable());
+  Serial.print(F(", Tolerance: "));
+  Serial.println(get_tolerance());
 }
 
 bool SensorValue16Bits::validate(uint16_t new_value) {
